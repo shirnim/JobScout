@@ -55,19 +55,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signInWithEmailAndPassword = async (email: string, password: string) => {
     if (!isFirebaseConfigured || !auth) {
-      console.warn("Firebase not configured. Signing in with mock user.");
-      if (email === 'demo@example.com' && password === 'password') {
-          setUser(mockUser);
-          return;
-      }
-      throw new Error("Invalid credentials for demo user. Use demo@example.com and password 'password'.");
+      console.warn("Firebase not configured. Signing in with mock user. Any credentials will work.");
+      setUser(mockUser);
+      return;
     }
     await firebaseSignInWithEmailAndPassword(auth, email, password);
   };
   
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
      if (!isFirebaseConfigured || !auth) {
-      console.warn("Firebase not configured. Creating mock user.");
+      console.warn("Firebase not configured. Creating mock user. Any credentials will work.");
       setUser(mockUser);
       return;
     }

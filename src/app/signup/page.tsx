@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import React from 'react';
+import React, { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,10 +32,16 @@ const formSchema = z.object({
 });
 
 export default function SignUpPage() {
-  const { createUserWithEmailAndPassword, signInWithGoogle } = useAuth();
+  const { user, createUserWithEmailAndPassword, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,7 +56,6 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       await createUserWithEmailAndPassword(values.email, values.password);
-      router.push('/dashboard');
     } catch (error: any) {
       toast({
         title: 'Sign Up Failed',
@@ -66,7 +71,6 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
         await signInWithGoogle();
-        // The auth provider will redirect on success
     } catch (error: any) {
         toast({
             title: 'Sign In Failed',

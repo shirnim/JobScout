@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,9 +20,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/lib/firebase/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import React from 'react';
 
 
 const formSchema = z.object({
@@ -33,10 +33,16 @@ const formSchema = z.object({
 });
 
 export default function SignInPage() {
-  const { signInWithEmailAndPassword, signInWithGoogle } = useAuth();
+  const { user, signInWithEmailAndPassword, signInWithGoogle } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/dashboard');
+    }
+  }, [user, router]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,7 +56,6 @@ export default function SignInPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(values.email, values.password);
-      router.push('/dashboard');
     } catch (error: any) {
       toast({
         title: 'Sign In Failed',
@@ -66,7 +71,6 @@ export default function SignInPage() {
     setIsLoading(true);
     try {
         await signInWithGoogle();
-        // The auth provider will redirect on success
     } catch (error: any) {
         toast({
             title: 'Sign In Failed',
