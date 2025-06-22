@@ -60,27 +60,33 @@ const transformApiJob = (apiJob: any): Job => ({
 export async function getJobs(): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
   const apiData = await fetchFromApi('search', { query: 'Software developer in USA', num_pages: '1' });
   
-  if (apiData && Array.isArray(apiData)) {
-      const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
-      // Only return API jobs if the array is not empty
-      if(jobs.length > 0) {
-          return { jobs, source: 'api' };
-      }
+  // A null response from fetchFromApi indicates an API failure, so we fall back to mock data.
+  if (apiData === null) {
+      console.warn('API fetch failed, falling back to mock data.');
+      return { jobs: MOCK_JOBS, source: 'mock' };
   }
   
-  // Fallback to mock jobs if API fails or returns no results
-  console.warn('API returned no jobs or failed, falling back to mock data.');
+  // An empty array from the API is a valid response, not an error.
+  if (Array.isArray(apiData)) {
+      const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
+      return { jobs, source: 'api' };
+  }
+
+  // If the data is not an array and not null, it's an unexpected format. Fallback.
+  console.warn('API returned unexpected data format, falling back to mock data.');
   return { jobs: MOCK_JOBS, source: 'mock' };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  const { jobs } = await getJobs();
+  // Always get the full job list first, as it's our reliable source of truth.
+  const { jobs, source } = await getJobs();
   const job = jobs.find(j => j.id === id);
 
   if (job) {
     return job;
   }
   
+  // If the job wasn't found in our list (from cache or a fresh API call), it's not available.
   console.warn(`Could not find job with ID ${id} from the main job list.`);
   return null;
 }
