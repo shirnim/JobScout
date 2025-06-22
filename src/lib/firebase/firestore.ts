@@ -15,7 +15,7 @@ const MOCK_JOBS: Job[] = [
 
 async function fetchFromApi(endpoint: string, params: Record<string, string>) {
     if (!RAPIDAPI_KEY || !RAPIDAPI_HOST || RAPIDAPI_KEY.includes('your-rapidapi-key')) {
-        console.warn("RapidAPI key not configured. Using mock job data. Please update .env file.");
+        console.warn("RapidAPI key not configured or is a placeholder. Using mock job data. Please update .env file and RESTART the server.");
         return null;
     }
 
@@ -33,14 +33,14 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
         });
 
         if (!response.ok) {
-            console.error(`API request failed with status ${response.status}: ${await response.text()}`);
+            console.error(`API request failed with status ${response.status}: ${await response.text()}. Falling back to mock data.`);
             return null;
         }
 
         const result = await response.json();
         return result.data;
     } catch (error) {
-        console.error("Failed to fetch from RapidAPI", error);
+        console.error("Failed to fetch from RapidAPI. Falling back to mock data.", error);
         return null;
     }
 }
