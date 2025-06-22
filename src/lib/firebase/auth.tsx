@@ -11,7 +11,7 @@ import {
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
   createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword
 } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from './config';
+import { auth, isFirebaseConfigured, useRealFirebase } from './config';
 import { useRouter } from 'next/navigation';
 
 interface AuthContextType {
@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
+    if (useRealFirebase && isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
@@ -45,8 +45,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signInWithEmailAndPassword = async (email: string, password: string) => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
+
+      if (typeof window !== 'undefined') {
+          const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+          const mockUser = mockUsers.find((u: any) => u.email === email);
+
+          if (!mockUser || mockUser.password !== password) {
+              throw new Error("Invalid email or password. Please try again.");
+          }
+      }
+
       setUser({
         uid: `mock-${email}`,
         displayName: email.split('@')[0],
@@ -59,8 +69,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
-     if (!isFirebaseConfigured || !auth) {
+     if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Creating mock user.");
+      if (typeof window !== 'undefined') {
+        const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+        if (mockUsers.some((u: any) => u.email === email)) {
+            throw new Error("An account with this email already exists.");
+        }
+        mockUsers.push({ email, password });
+        localStorage.setItem('mock-users', JSON.stringify(mockUsers));
+      }
       setUser({
         uid: `mock-${email}`,
         displayName: email.split('@')[0],
@@ -73,7 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
       setUser({
         uid: 'mock-google-user-123',
@@ -90,7 +108,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       setUser(null);
       router.push('/');
       return;

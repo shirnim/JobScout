@@ -47,4 +47,4 @@ if (useRealFirebase) {
 
 const isFirebaseConfigured = !!auth;
 
-export { app, auth, db, isFirebaseConfigured };
+export { app, auth, db, isFirebaseConfigured, useRealFirebase };
