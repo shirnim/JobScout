@@ -72,19 +72,27 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // getJobs() uses Next.js's fetch caching, so this call is efficient.
-  const allJobs = await getJobs();
-  const job = allJobs.find(j => j.id === id);
-
-  // If the job is found in the main list (either from API or mock fallback), return it.
-  if (job) {
-    return job;
+  // First, try to find the job in the cached list from the main search.
+  // This is fast and avoids extra API calls for normal navigation.
+  const allJobs = await getJobs(); // This uses Next.js fetch cache
+  const jobFromList = allJobs.find(j => j.id === id);
+  if (jobFromList) {
+    return jobFromList;
   }
 
-  // If we're here, the job ID was not in the list from getJobs().
-  // This can happen with a stale or invalid direct link.
-  // Instead of calling the unreliable 'job-details' endpoint, we'll consider it not found.
-  console.warn(`Job with ID ${id} not found in the available list. It may be expired or invalid.`);
+  // If not found (e.g., direct link, or item fell out of search results),
+  // try fetching the specific job details from the API.
+  console.log(`Job ${id} not in cached list, fetching details from API...`);
+  const apiData = await fetchFromApi('job-details', { job_id: id });
+
+  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+    // The job-details endpoint returns an array with one job object
+    return transformApiJob(apiData[0]);
+  }
+  
+  // If the API call fails (fetchFromApi returns null) or returns no data,
+  // the job is considered not found.
+  console.warn(`Job with ID ${id} not found via details endpoint. It may be expired or invalid.`);
   return null;
 }
 
