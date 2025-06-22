@@ -47,22 +47,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithEmailAndPassword = async (email: string, password: string) => {
     if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
+      const trimmedEmail = email.trim();
 
       if (typeof window !== 'undefined') {
           const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-          const mockUser = mockUsers.find((u: any) => u.email === email);
+          const mockUser = mockUsers.find((u: any) => u.email === trimmedEmail);
 
           if (!mockUser || mockUser.password !== password) {
               throw new Error("Invalid email or password. Please try again.");
           }
+          
+          setUser({
+            uid: `mock-${trimmedEmail}`,
+            displayName: trimmedEmail.split('@')[0],
+            email: trimmedEmail,
+            photoURL: `https://placehold.co/40x40.png`,
+          } as User);
       }
-
-      setUser({
-        uid: `mock-${email}`,
-        displayName: email.split('@')[0],
-        email: email,
-        photoURL: `https://placehold.co/40x40.png`,
-      } as User);
       return;
     }
     await firebaseSignInWithEmailAndPassword(auth, email, password);
@@ -71,18 +72,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
      if (!useRealFirebase || !isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Creating mock user.");
+      const trimmedEmail = email.trim();
+
       if (typeof window !== 'undefined') {
         const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-        if (mockUsers.some((u: any) => u.email === email)) {
+        if (mockUsers.some((u: any) => u.email === trimmedEmail)) {
             throw new Error("An account with this email already exists.");
         }
-        mockUsers.push({ email, password });
+        mockUsers.push({ email: trimmedEmail, password: password });
         localStorage.setItem('mock-users', JSON.stringify(mockUsers));
       }
       setUser({
-        uid: `mock-${email}`,
-        displayName: email.split('@')[0],
-        email: email,
+        uid: `mock-${trimmedEmail}`,
+        displayName: trimmedEmail.split('@')[0],
+        email: trimmedEmail,
         photoURL: `https://placehold.co/40x40.png`,
       } as User);
       return;
