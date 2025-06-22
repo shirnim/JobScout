@@ -1,3 +1,4 @@
+
 import type { Job, AnalyticsData } from "@/types";
 
 const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
@@ -72,27 +73,18 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // First, try to find the job in the cached list from the main search.
-  // This is fast and avoids extra API calls for normal navigation.
+  // This function will now ONLY rely on the main getJobs() search result.
+  // The 'job-details' endpoint has proven to be unreliable.
   const allJobs = await getJobs(); // This uses Next.js fetch cache
-  const jobFromList = allJobs.find(j => j.id === id);
-  if (jobFromList) {
-    return jobFromList;
+  const job = allJobs.find(j => j.id === id);
+
+  if (job) {
+    return job;
   }
 
-  // If not found (e.g., direct link, or item fell out of search results),
-  // try fetching the specific job details from the API.
-  console.log(`Job ${id} not in cached list, fetching details from API...`);
-  const apiData = await fetchFromApi('job-details', { job_id: id });
-
-  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
-    // The job-details endpoint returns an array with one job object
-    return transformApiJob(apiData[0]);
-  }
-  
-  // If the API call fails (fetchFromApi returns null) or returns no data,
-  // the job is considered not found.
-  console.warn(`Job with ID ${id} not found via details endpoint. It may be expired or invalid.`);
+  // If the job is not in the main list (e.g., from an old direct link or expired listing),
+  // we consider it not found. This prevents errors from the unstable details endpoint.
+  console.warn(`Job with ID ${id} not found in the primary job list. It may be expired or invalid.`);
   return null;
 }
 
