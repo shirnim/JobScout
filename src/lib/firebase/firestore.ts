@@ -59,22 +59,41 @@ export async function getJobs(): Promise<Job[]> {
   const apiData = await fetchFromApi('search', { query: 'Software developer in USA', num_pages: '1' });
   
   if (apiData && Array.isArray(apiData)) {
-      return apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
+      const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
+      // Only return API jobs if the array is not empty
+      if(jobs.length > 0) {
+          return jobs;
+      }
   }
   
+  // Fallback to mock jobs if API fails or returns no results
+  console.warn('API returned no jobs or failed, falling back to mock data.');
   return Promise.resolve(MOCK_JOBS);
 }
 
 export async function getJob(id: string): Promise<Job | null> {
+  // First, try to find the job in the main list. Because getJobs() is cached
+  // by Next.js's fetch, this is very efficient.
+  const allJobs = await getJobs();
+  const jobFromList = allJobs.find(j => j.id === id);
+
+  if (jobFromList) {
+    return jobFromList;
+  }
+
+  // If the job isn't in our cached list (e.g. from a direct link), we can
+  // try the specific job-details endpoint as a fallback. This is the API call
+  // that was previously causing errors.
+  console.warn(`Job ${id} not in main list, trying details API as fallback.`);
   const apiData = await fetchFromApi('job-details', { job_id: id });
 
   if (apiData && Array.isArray(apiData) && apiData.length > 0) {
       return transformApiJob(apiData[0]);
   }
   
-  console.warn(`Could not fetch job ${id} from API, falling back to mock data.`);
-  const job = MOCK_JOBS.find(j => j.id === id) || null;
-  return Promise.resolve(job);
+  // If both methods fail, the job is not found.
+  console.error(`Could not fetch details for job ID: ${id} from any source.`);
+  return null;
 }
 
 const MOCK_ANALYTICS: AnalyticsData = {
