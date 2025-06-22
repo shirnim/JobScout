@@ -5,6 +5,15 @@ import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut 
 import { auth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
 
+// A mock user for development when Firebase is not configured
+const mockUser = {
+  uid: 'mock-user-123',
+  displayName: 'Demo User',
+  email: 'demo@example.com',
+  photoURL: `https://placehold.co/40x40.png`,
+} as User;
+
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -21,20 +30,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth) {
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        setUser(user);
+        setLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      // If Firebase is not configured, auth will be handled with a mock user via signIn/logout actions.
+      console.warn("Firebase not configured. Real authentication is disabled. Using mock user for demonstration.");
       setLoading(false);
-      return;
     }
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
-      setLoading(false);
-    });
-    return () => unsubscribe();
   }, []);
 
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured || !auth) {
-      console.warn("Firebase not configured, cannot sign in.");
+      console.warn("Firebase not configured. Signing in with mock user.");
+      setUser(mockUser);
+      router.push('/dashboard');
       return;
     }
     const provider = new GoogleAuthProvider();

@@ -11,29 +11,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, User as UserIcon, Loader2, AlertTriangle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { LogIn, LogOut, User as UserIcon, Loader2 } from 'lucide-react';
 
 const AuthButton = () => {
-  const { user, loading, signInWithGoogle, logout, isFirebaseConfigured } = useAuth();
-
-  if (!isFirebaseConfigured) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" disabled>
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Auth Disabled
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Firebase is not configured. Authentication is disabled.</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
+  const { user, loading, signInWithGoogle, logout } = useAuth();
 
   if (loading) {
     return (
