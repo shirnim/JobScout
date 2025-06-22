@@ -57,33 +57,30 @@ const transformApiJob = (apiJob: any): Job => ({
     applyUrl: apiJob.job_apply_link,
 });
 
-export async function getJobs(): Promise<Job[]> {
+export async function getJobs(): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
   const apiData = await fetchFromApi('search', { query: 'Software developer in USA', num_pages: '1' });
   
   if (apiData && Array.isArray(apiData)) {
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
       // Only return API jobs if the array is not empty
       if(jobs.length > 0) {
-          return jobs;
+          return { jobs, source: 'api' };
       }
   }
   
   // Fallback to mock jobs if API fails or returns no results
   console.warn('API returned no jobs or failed, falling back to mock data.');
-  return Promise.resolve(MOCK_JOBS);
+  return { jobs: MOCK_JOBS, source: 'mock' };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // Always rely on the main getJobs search, which is more stable and cached.
-  const allJobs = await getJobs();
-  const job = allJobs.find(j => j.id === id);
+  const { jobs } = await getJobs();
+  const job = jobs.find(j => j.id === id);
 
   if (job) {
     return job;
   }
   
-  // If the job is not found in the main list, it's considered not found.
-  // This avoids calling the unreliable details endpoint.
   console.warn(`Could not find job with ID ${id} from the main job list.`);
   return null;
 }
