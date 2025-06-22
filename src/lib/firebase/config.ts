@@ -15,27 +15,30 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
 
-// Check if the essential Firebase config values are present.
-const hasEssentialConfig = 
+// A robust check to ensure Firebase is configured with actual credentials, not placeholders.
+const hasValidConfig = 
   firebaseConfig.apiKey &&
   firebaseConfig.authDomain &&
-  firebaseConfig.projectId;
+  firebaseConfig.projectId &&
+  !firebaseConfig.apiKey.includes('your-') && 
+  !firebaseConfig.authDomain.includes('your-') &&
+  !firebaseConfig.projectId.includes('your-');
 
-if (hasEssentialConfig) {
+if (hasValidConfig) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
   } catch (e) {
-    console.error("Firebase initialization failed. Please check your credentials in the .env file. Falling back to mock implementation.", e);
-    // Ensure everything is null if initialization fails
+    console.error("Firebase initialization failed despite configuration being present. Check your .env values.", e);
+    // Reset to null if initialization fails for any reason
     app = null;
     auth = null;
     db = null;
   }
 } else {
     console.warn(
-        'Essential Firebase credentials are not configured. Firebase features will be disabled. Please open the .env file and add your project credentials.'
+        'Firebase is not configured with valid credentials. App is running in mock mode. Please open the .env file and add your project credentials.'
     );
 }
 
