@@ -13,15 +13,6 @@ import {
 import { auth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
 
-// A mock user for development when Firebase is not configured
-const mockUser = {
-  uid: 'mock-user-123',
-  displayName: 'Demo User',
-  email: 'demo@example.com',
-  photoURL: `https://placehold.co/40x40.png`,
-} as User;
-
-
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -56,7 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithEmailAndPassword = async (email: string, password: string) => {
     if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user. Any credentials will work.");
-      setUser(mockUser);
+      setUser({
+        uid: `mock-${email}`,
+        displayName: email.split('@')[0],
+        email: email,
+        photoURL: `https://placehold.co/40x40.png`,
+      } as User);
       return;
     }
     await firebaseSignInWithEmailAndPassword(auth, email, password);
@@ -65,7 +61,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
      if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Creating mock user. Any credentials will work.");
-      setUser(mockUser);
+      setUser({
+        uid: `mock-${email}`,
+        displayName: email.split('@')[0],
+        email: email,
+        photoURL: `https://placehold.co/40x40.png`,
+      } as User);
       return;
     }
     await firebaseCreateUserWithEmailAndPassword(auth, email, password);
@@ -74,7 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
-      setUser(mockUser);
+      setUser({
+        uid: 'mock-google-user-123',
+        displayName: 'Google User',
+        email: 'google@example.com',
+        photoURL: `https://placehold.co/40x40.png`,
+      } as User);
       router.push('/dashboard');
       return;
     }
