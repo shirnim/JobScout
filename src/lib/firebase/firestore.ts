@@ -72,27 +72,19 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // First, try to find the job in the main list. Because getJobs() is cached
-  // by Next.js's fetch, this is very efficient.
+  // getJobs() uses Next.js's fetch caching, so this call is efficient.
   const allJobs = await getJobs();
-  const jobFromList = allJobs.find(j => j.id === id);
+  const job = allJobs.find(j => j.id === id);
 
-  if (jobFromList) {
-    return jobFromList;
+  // If the job is found in the main list (either from API or mock fallback), return it.
+  if (job) {
+    return job;
   }
 
-  // If the job isn't in our cached list (e.g. from a direct link), we can
-  // try the specific job-details endpoint as a fallback. This is the API call
-  // that was previously causing errors.
-  console.warn(`Job ${id} not in main list, trying details API as fallback.`);
-  const apiData = await fetchFromApi('job-details', { job_id: id });
-
-  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
-      return transformApiJob(apiData[0]);
-  }
-  
-  // If both methods fail, the job is not found.
-  console.error(`Could not fetch details for job ID: ${id} from any source.`);
+  // If we're here, the job ID was not in the list from getJobs().
+  // This can happen with a stale or invalid direct link.
+  // Instead of calling the unreliable 'job-details' endpoint, we'll consider it not found.
+  console.warn(`Job with ID ${id} not found in the available list. It may be expired or invalid.`);
   return null;
 }
 
