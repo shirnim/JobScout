@@ -7,7 +7,8 @@ import type { AnalyticsData } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, MapPin, Users } from 'lucide-react';
+import { Briefcase, MapPin, Users, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -22,18 +23,32 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 );
 
 export default function DashboardPage() {
-    const { user, loading: authLoading } = useAuth();
+    const { user, loading: authLoading, isFirebaseConfigured } = useAuth();
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
-        if (user) {
+        if (user && isFirebaseConfigured) {
             getDashboardAnalytics().then(data => {
                 setAnalytics(data);
                 setLoadingData(false);
             });
+        } else if (!isFirebaseConfigured || !user) {
+            setLoadingData(false);
         }
-    }, [user]);
+    }, [user, isFirebaseConfigured]);
+
+    if (!isFirebaseConfigured) {
+        return (
+            <Alert variant="destructive" className="max-w-2xl mx-auto">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Dashboard Unavailable</AlertTitle>
+                <AlertDescription>
+                    Firebase is not configured, so authentication and dashboard analytics are disabled. Please add your Firebase credentials to the <code>.env</code> file to enable these features.
+                </AlertDescription>
+            </Alert>
+        );
+    }
 
     if (authLoading) {
         return (
