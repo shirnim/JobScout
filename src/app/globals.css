@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 20% 98%;
     --foreground: 224 71.4% 4.1%;
-    --card: 0 0% 100%;
+    --card: 210 20% 100%;
     --card-foreground: 224 71.4% 4.1%;
-    --popover: 0 0% 100%;
+    --popover: 210 20% 100%;
     --popover-foreground: 224 71.4% 4.1%;
-    --primary: 213 90% 40%;
+    --primary: 212 72% 47%;
     --primary-foreground: 210 20% 98%;
-    --secondary: 210 40% 96.1%;
+    --secondary: 210 30% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 210 30% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 213 90% 55%;
+    --accent: 212 72% 55%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 213 90% 40%;
+    --ring: 212 72% 47%;
     --radius: 0.5rem;
   }
   .dark {
@@ -32,19 +32,19 @@
     --card-foreground: 210 40% 98%;
     --popover: 215 28% 17%;
     --popover-foreground: 210 40% 98%;
-    --primary: 213 90% 55%;
+    --primary: 212 72% 55%;
     --primary-foreground: 210 20% 98%;
     --secondary: 217.2 32.6% 25.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 25.5%;
     --muted-foreground: 215 20.2% 65.1%;
-    --accent: 213 90% 65%;
+    --accent: 212 72% 65%;
     --accent-foreground: 210 20% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 25.5%;
     --input: 217.2 32.6% 25.5%;
-    --ring: 213 90% 55%;
+    --ring: 212 72% 55%;
   }
 }
 @layer base {
@@ -53,5 +53,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image: radial-gradient(circle at top left, hsl(var(--secondary)), transparent 40%),
+                      radial-gradient(circle at bottom right, hsl(var(--accent) / 0.05), transparent 40%);
+    background-attachment: fixed;
   }
 }
