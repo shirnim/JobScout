@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (typeof window !== 'undefined') {
           const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-          const mockUser = mockUsers.find((u: any) => u.email === trimmedEmail);
+          const mockUser = mockUsers.find((u: any) => u.email.trim() === trimmedEmail);
 
           if (!mockUser || mockUser.password !== password) {
               throw new Error("Invalid email or password. Please try again.");
@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (typeof window !== 'undefined') {
         const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-        if (mockUsers.some((u: any) => u.email === trimmedEmail)) {
+        if (mockUsers.some((u: any) => u.email.trim() === trimmedEmail)) {
             throw new Error("An account with this email already exists.");
         }
         mockUsers.push({ email: trimmedEmail, password: password });
