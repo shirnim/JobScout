@@ -16,8 +16,14 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let isFirebaseConfigured = false;
 
-// Add a check for placeholder values
-if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('your-api-key')) {
+// A more robust check for all necessary Firebase config values.
+const hasValidConfig = 
+  firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('your-api-key') &&
+  firebaseConfig.authDomain && !firebaseConfig.authDomain.includes('your-auth-domain') &&
+  firebaseConfig.projectId && !firebaseConfig.projectId.includes('your-project-id');
+
+
+if (hasValidConfig) {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
@@ -25,6 +31,10 @@ if (firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('your-api-key')) {
     isFirebaseConfigured = true;
   } catch (e) {
     console.error("Failed to initialize Firebase. Please check your credentials in the .env file.", e);
+    app = null;
+    auth = null;
+    db = null;
+    isFirebaseConfigured = false;
   }
 } else {
     console.warn(
