@@ -11,7 +11,7 @@ export default async function Home() {
           Find Your Next Opportunity
         </h1>
         <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-          Search through thousands of job listings aggregated from top job boards, enriched with AI-powered insights.
+          Search through thousands of job listings aggregated from top job boards. Gain a competitive edge with our AI-powered insights and market analytics.
         </p>
       </div>
       <JobSearchAndListings initialJobs={jobs} />
