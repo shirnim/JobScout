@@ -34,7 +34,7 @@ export default function JobCard({ job }: JobCardProps) {
       </CardContent>
       <CardFooter>
         <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link href={`/job/${job.id}`}>View Details</Link>
+          <Link href={`/job/${encodeURIComponent(job.id)}`}>View Details</Link>
         </Button>
       </CardFooter>
     </Card>
