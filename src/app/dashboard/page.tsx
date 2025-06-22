@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Briefcase, MapPin, Users } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -23,8 +24,15 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
+    const router = useRouter();
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [loadingData, setLoadingData] = useState(true);
+
+    useEffect(() => {
+        if (!authLoading && !user) {
+            router.replace('/signin');
+        }
+    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (user) {
@@ -32,12 +40,10 @@ export default function DashboardPage() {
                 setAnalytics(data);
                 setLoadingData(false);
             });
-        } else {
-            setLoadingData(false);
         }
     }, [user]);
 
-    if (authLoading) {
+    if (authLoading || !user) {
         return (
            <div className="space-y-8">
                <Skeleton className="h-8 w-48" />
@@ -53,17 +59,6 @@ export default function DashboardPage() {
            </div>
        );
    }
-
-    if (!user) {
-        return (
-            <div className="space-y-8">
-                <div className="text-center">
-                  <h1 className="text-2xl font-bold">Access Denied</h1>
-                  <p className="text-muted-foreground">Please sign in to view the dashboard.</p>
-                </div>
-            </div>
-        );
-    }
     
     if (loadingData || !analytics) {
          return (

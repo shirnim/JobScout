@@ -1,7 +1,15 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { 
+  User, 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut,
+  signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
+  createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword
+} from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
 
@@ -18,6 +26,8 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithEmailAndPassword: (email: string, password: string) => Promise<void>;
+  createUserWithEmailAndPassword: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isFirebaseConfigured: boolean;
 }
@@ -43,6 +53,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const signInWithEmailAndPassword = async (email: string, password: string) => {
+    if (!isFirebaseConfigured || !auth) {
+      console.warn("Firebase not configured. Signing in with mock user.");
+      if (email === 'demo@example.com' && password === 'password') {
+          setUser(mockUser);
+          return;
+      }
+      throw new Error("Invalid credentials for demo user. Use demo@example.com and password 'password'.");
+    }
+    await firebaseSignInWithEmailAndPassword(auth, email, password);
+  };
+  
+  const createUserWithEmailAndPassword = async (email: string, password: string) => {
+     if (!isFirebaseConfigured || !auth) {
+      console.warn("Firebase not configured. Creating mock user.");
+      setUser(mockUser);
+      return;
+    }
+    await firebaseCreateUserWithEmailAndPassword(auth, email, password);
+  };
+
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
@@ -51,12 +82,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      router.push('/dashboard');
-    } catch (error) {
-      console.error("Error signing in with Google", error);
-    }
+    await signInWithPopup(auth, provider);
+    router.push('/dashboard');
   };
 
   const logout = async () => {
@@ -74,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout, isFirebaseConfigured }}>
+    <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmailAndPassword, createUserWithEmailAndPassword, logout, isFirebaseConfigured }}>
       {children}
     </AuthContext.Provider>
   );

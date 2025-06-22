@@ -12,9 +12,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { LogIn, LogOut, User as UserIcon, Loader2 } from 'lucide-react';
+import Link from 'next/link';
 
 const AuthButton = () => {
-  const { user, loading, signInWithGoogle, logout } = useAuth();
+  const { user, loading, logout } = useAuth();
 
   if (loading) {
     return (
@@ -26,9 +27,11 @@ const AuthButton = () => {
 
   if (!user) {
     return (
-      <Button onClick={signInWithGoogle} variant="outline">
-        <LogIn className="mr-2 h-4 w-4" />
-        Sign In
+      <Button asChild variant="outline">
+        <Link href="/signin">
+          <LogIn className="mr-2 h-4 w-4" />
+          Sign In
+        </Link>
       </Button>
     );
   }
@@ -40,7 +43,7 @@ const AuthButton = () => {
           <Avatar className="h-10 w-10">
             <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User Avatar'} />
             <AvatarFallback>
-              <UserIcon />
+              {user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -48,8 +51,8 @@ const AuthButton = () => {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="text-sm font-medium leading-none">{user.displayName || user.email}</p>
+            {user.displayName && <p className="text-xs leading-none text-muted-foreground">{user.email}</p>}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
