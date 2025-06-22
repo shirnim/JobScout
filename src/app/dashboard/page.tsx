@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/firebase/auth';
-import { useRouter } from 'next/navigation';
 import { getDashboardAnalytics } from '@/lib/firebase/firestore';
 import type { AnalyticsData } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,15 +23,8 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
-    const router = useRouter();
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [loadingData, setLoadingData] = useState(true);
-
-    useEffect(() => {
-        if (!authLoading && !user) {
-            router.push('/');
-        }
-    }, [user, authLoading, router]);
 
     useEffect(() => {
         if (user) {
@@ -43,7 +35,24 @@ export default function DashboardPage() {
         }
     }, [user]);
 
-    if (authLoading || !user) {
+    if (authLoading) {
+        return (
+           <div className="space-y-8">
+               <Skeleton className="h-8 w-48" />
+               <div className="grid gap-4 md:grid-cols-3">
+                   <Skeleton className="h-28" />
+                   <Skeleton className="h-28" />
+                   <Skeleton className="h-28" />
+               </div>
+               <div className="grid gap-4 md:grid-cols-2">
+                   <Skeleton className="h-80" />
+                   <Skeleton className="h-80" />
+               </div>
+           </div>
+       );
+   }
+
+    if (!user) {
         return (
             <div className="space-y-8">
                 <div className="text-center">
