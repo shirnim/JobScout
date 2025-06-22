@@ -74,28 +74,17 @@ export async function getJobs(): Promise<Job[]> {
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // First, try to find the job in the cached list from the main search.
-  // This is faster and avoids unnecessary API calls.
-  const allJobs = await getJobs(); // This uses Next.js fetch cache
-  const jobFromList = allJobs.find(j => j.id === id);
+  // Always rely on the main getJobs search, which is more stable and cached.
+  const allJobs = await getJobs();
+  const job = allJobs.find(j => j.id === id);
 
-  if (jobFromList) {
-    return jobFromList;
+  if (job) {
+    return job;
   }
   
-  // If not found in the list (e.g., direct link), try fetching from the details endpoint.
-  console.log(`Job with ID ${id} not found in cache, fetching from details API.`);
-  const apiData = await fetchFromApi('job-details', { job_id: id });
-  
-  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
-    const job = transformApiJob(apiData[0]);
-    if (job.id && job.title && job.description) {
-      return job;
-    }
-  }
-
-  // If the API call fails or returns no data, the job is not found.
-  console.warn(`Could not find job with ID ${id} from details API.`);
+  // If the job is not found in the main list, it's considered not found.
+  // This avoids calling the unreliable details endpoint.
+  console.warn(`Could not find job with ID ${id} from the main job list.`);
   return null;
 }
 
