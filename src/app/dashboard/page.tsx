@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState } from 'react';
@@ -7,8 +8,9 @@ import type { AnalyticsData } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase, MapPin, Users } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Briefcase, MapPin, Users, ShieldAlert } from 'lucide-react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 const StatCard = ({ title, value, icon: Icon }: { title: string, value: string | number, icon: React.ElementType }) => (
     <Card>
@@ -22,20 +24,30 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
     </Card>
 );
 
+const DashboardSkeleton = () => (
+    <div className="space-y-8">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+            <Skeleton className="h-28" />
+        </div>
+        <div className="grid gap-4 lg:grid-cols-2">
+            <Skeleton className="h-80" />
+            <Skeleton className="h-80" />
+        </div>
+    </div>
+);
+
+
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
-    const router = useRouter();
     const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
     const [loadingData, setLoadingData] = useState(true);
 
     useEffect(() => {
-        if (!authLoading && !user) {
-            router.replace('/signin');
-        }
-    }, [user, authLoading, router]);
-
-    useEffect(() => {
         if (user) {
+            setLoadingData(true);
             getDashboardAnalytics().then(data => {
                 setAnalytics(data);
                 setLoadingData(false);
@@ -43,11 +55,34 @@ export default function DashboardPage() {
         }
     }, [user]);
 
-    if (authLoading || !user) {
+    if (authLoading) {
+        return <DashboardSkeleton />;
+    }
+    
+    if (!user) {
         return (
-           <div className="space-y-8">
-               <Skeleton className="h-8 w-48" />
-               <div className="grid gap-4 md:grid-cols-3">
+            <div className="flex items-center justify-center pt-16">
+                <Card className="max-w-md mx-auto">
+                    <CardHeader className="text-center">
+                        <ShieldAlert className="mx-auto h-12 w-12 text-destructive" />
+                        <CardTitle className="mt-4 text-2xl">Access Denied</CardTitle>
+                    </CardHeader>
+                    <CardContent className="text-center">
+                        <p className="text-muted-foreground">You must be signed in to view the dashboard.</p>
+                        <Button asChild className="mt-6">
+                            <Link href="/signin">Sign In</Link>
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
+    if (loadingData || !analytics) {
+         return (
+            <div className="max-w-7xl mx-auto space-y-8">
+                <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
+                <div className="grid gap-4 md:grid-cols-3">
                    <Skeleton className="h-28" />
                    <Skeleton className="h-28" />
                    <Skeleton className="h-28" />
@@ -56,23 +91,6 @@ export default function DashboardPage() {
                    <Skeleton className="h-80" />
                    <Skeleton className="h-80" />
                </div>
-           </div>
-       );
-   }
-    
-    if (loadingData || !analytics) {
-         return (
-            <div className="space-y-8">
-                <Skeleton className="h-8 w-48" />
-                <div className="grid gap-4 md:grid-cols-3">
-                    <Skeleton className="h-28" />
-                    <Skeleton className="h-28" />
-                    <Skeleton className="h-28" />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                    <Skeleton className="h-80" />
-                    <Skeleton className="h-80" />
-                </div>
             </div>
         );
     }
