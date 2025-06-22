@@ -10,7 +10,7 @@ import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const JOBS_PER_PAGE = 9;
+const JOBS_PER_PAGE = 5;
 
 export default function JobSearchAndListings() {
   const [query, setQuery] = useState('');

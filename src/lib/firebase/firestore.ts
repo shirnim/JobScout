@@ -70,7 +70,7 @@ export async function getJobs(query: string): Promise<{ jobs: Job[], source: 'ap
     return { jobs: [], source: 'mock' };
   }
   
-  const apiData = await fetchFromApi('search', { query, num_pages: '5' });
+  const apiData = await fetchFromApi('search', { query, num_pages: '10' });
   
   if (apiData === null) {
       return { jobs: MOCK_JOBS, source: 'mock' };
