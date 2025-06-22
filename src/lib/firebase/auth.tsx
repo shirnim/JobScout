@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -31,9 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    // We only need to check for the auth object.
-    // If it's null, Firebase isn't configured or failed to initialize.
-    if (auth) {
+    if (isFirebaseConfigured && auth) {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
@@ -41,13 +40,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return () => unsubscribe();
     } else {
       // Firebase is not available, run in mock mode.
-      console.warn("Firebase not configured. Real authentication is disabled.");
       setLoading(false);
     }
   }, []);
 
   const signInWithEmailAndPassword = async (email: string, password: string) => {
-    if (!auth) {
+    if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
       setUser({
         uid: `mock-${email}`,
@@ -61,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
-     if (!auth) {
+     if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Creating mock user.");
       setUser({
         uid: `mock-${email}`,
@@ -75,7 +73,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    if (!auth) {
+    if (!isFirebaseConfigured || !auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
       setUser({
         uid: 'mock-google-user-123',
@@ -92,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    if (!auth) {
+    if (!isFirebaseConfigured || !auth) {
       setUser(null);
       router.push('/');
       return;

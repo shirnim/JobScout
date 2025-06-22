@@ -1,3 +1,4 @@
+
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
 import { getFirestore, type Firestore } from "firebase/firestore";
@@ -15,34 +16,35 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
 
-// A robust check to ensure Firebase is configured with actual credentials, not placeholders.
-const hasValidConfig = 
-  firebaseConfig.apiKey &&
-  firebaseConfig.authDomain &&
-  firebaseConfig.projectId &&
-  !firebaseConfig.apiKey.includes('your-') && 
-  !firebaseConfig.authDomain.includes('your-') &&
-  !firebaseConfig.projectId.includes('your-');
+// Only initialize Firebase if explicitly told to in the .env file.
+const useRealFirebase = process.env.USE_REAL_FIREBASE === 'true';
 
-if (hasValidConfig) {
+if (useRealFirebase) {
   try {
-    app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    // Check that config values are not placeholders
+    if (firebaseConfig.apiKey?.includes('your-')) {
+        throw new Error("Firebase API Key is a placeholder.");
+    }
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
     auth = getAuth(app);
     db = getFirestore(app);
-  } catch (e) {
-    console.error("Firebase initialization failed despite configuration being present. Check your .env values.", e);
-    // Reset to null if initialization fails for any reason
+    console.log("Firebase initialized successfully.");
+  } catch (error) {
+    console.error(
+        "Firebase initialization failed! Please check your credentials in .env and ensure USE_REAL_FIREBASE is set correctly.",
+        error
+    );
+    // Force back to null if anything goes wrong.
     app = null;
     auth = null;
     db = null;
   }
 } else {
     console.warn(
-        'Firebase is not configured with valid credentials. App is running in mock mode. Please open the .env file and add your project credentials.'
+        'Firebase is not configured to run. App is in mock mode. To enable, set USE_REAL_FIREBASE="true" in the .env file after adding your credentials.'
     );
 }
 
-// The single source of truth for whether Firebase is ready.
 const isFirebaseConfigured = !!auth;
 
 export { app, auth, db, isFirebaseConfigured };
