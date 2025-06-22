@@ -31,22 +31,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
+    // We only need to check for the auth object.
+    // If it's null, Firebase isn't configured or failed to initialize.
+    if (auth) {
       const unsubscribe = onAuthStateChanged(auth, (user) => {
         setUser(user);
         setLoading(false);
       });
       return () => unsubscribe();
     } else {
-      // If Firebase is not configured, auth will be handled with a mock user via signIn/logout actions.
-      console.warn("Firebase not configured. Real authentication is disabled. Using mock user for demonstration.");
+      // Firebase is not available, run in mock mode.
+      console.warn("Firebase not configured. Real authentication is disabled.");
       setLoading(false);
     }
   }, []);
 
   const signInWithEmailAndPassword = async (email: string, password: string) => {
-    if (!isFirebaseConfigured || !auth) {
-      console.warn("Firebase not configured. Signing in with mock user. Any credentials will work.");
+    if (!auth) {
+      console.warn("Firebase not configured. Signing in with mock user.");
       setUser({
         uid: `mock-${email}`,
         displayName: email.split('@')[0],
@@ -59,8 +61,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
   
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
-     if (!isFirebaseConfigured || !auth) {
-      console.warn("Firebase not configured. Creating mock user. Any credentials will work.");
+     if (!auth) {
+      console.warn("Firebase not configured. Creating mock user.");
       setUser({
         uid: `mock-${email}`,
         displayName: email.split('@')[0],
@@ -73,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!auth) {
       console.warn("Firebase not configured. Signing in with mock user.");
       setUser({
         uid: 'mock-google-user-123',
@@ -90,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!auth) {
       setUser(null);
       router.push('/');
       return;
