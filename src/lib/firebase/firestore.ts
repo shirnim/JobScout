@@ -16,7 +16,7 @@ const MOCK_JOBS: Job[] = [
 
 async function fetchFromApi(endpoint: string, params: Record<string, string>) {
     if (!RAPIDAPI_KEY || !RAPIDAPI_HOST || RAPIDAPI_KEY.includes('your-rapidapi-key')) {
-        console.warn("RapidAPI key not configured or is a placeholder. Using mock job data. Please update .env file and RESTART the server.");
+        console.warn("RapidAPI key not configured or is a placeholder. Using mock data. Please update .env file and RESTART the server.");
         return null;
     }
 
@@ -34,7 +34,13 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
         });
 
         if (!response.ok) {
-            console.error(`API request failed with status ${response.status}: ${await response.text()}. Falling back to mock data.`);
+            // The job-details endpoint is known to be unstable. We will fail silently 
+            // and let the caller handle the null response (e.g., by showing a 404 page).
+            if (endpoint === 'job-details') {
+                console.warn(`The 'job-details' API endpoint failed with status ${response.status}. This is a known issue with the external API. The app will proceed as if the job was not found.`);
+            } else {
+                 console.error(`API request failed with status ${response.status}: ${await response.text()}. Falling back to mock data.`);
+            }
             return null;
         }
 
@@ -64,20 +70,20 @@ export async function getJobs(query: string): Promise<{ jobs: Job[], source: 'ap
   
   const apiData = await fetchFromApi('search', { query, num_pages: '1' });
   
-  // A null response from fetchFromApi indicates an API failure.
   if (apiData === null) {
-      console.warn('API search failed. No jobs will be returned.');
-      return { jobs: [], source: 'mock' };
+      return { jobs: MOCK_JOBS, source: 'mock' };
   }
   
   if (Array.isArray(apiData)) {
+      if (apiData.length === 0) {
+          return { jobs: [], source: 'api' }; // Valid empty response
+      }
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
       return { jobs, source: 'api' };
   }
 
-  // If the data is not an array and not null, it's an unexpected format.
-  console.warn('API returned unexpected data format, returning no jobs.');
-  return { jobs: [], source: 'mock' };
+  console.warn('API returned unexpected data format, returning mock data.');
+  return { jobs: MOCK_JOBS, source: 'mock' };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
@@ -87,14 +93,9 @@ export async function getJob(id: string): Promise<Job | null> {
     return transformApiJob(apiData[0]);
   }
 
-  // If API fails or returns no data, try finding it in the mock jobs as a last resort for local dev.
-  const jobFromMocks = MOCK_JOBS.find(j => j.id === id);
-  if (jobFromMocks) {
-    console.warn(`Could not find job with ID ${id} from API, falling back to mock data.`);
-    return jobFromMocks;
-  }
-
-  console.warn(`Could not find job with ID ${id} from API or mocks.`);
+  // If the API call fails or returns no data, we return null.
+  // The page component will then handle this by showing a "Not Found" page.
+  // We no longer fall back to mock data here to avoid user confusion.
   return null;
 }
 
