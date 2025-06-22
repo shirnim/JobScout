@@ -57,37 +57,44 @@ const transformApiJob = (apiJob: any): Job => ({
     applyUrl: apiJob.job_apply_link,
 });
 
-export async function getJobs(): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
-  const apiData = await fetchFromApi('search', { query: 'Software developer in USA', num_pages: '1' });
-  
-  // A null response from fetchFromApi indicates an API failure, so we fall back to mock data.
-  if (apiData === null) {
-      console.warn('API fetch failed, falling back to mock data.');
-      return { jobs: MOCK_JOBS, source: 'mock' };
+export async function getJobs(query: string): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
+  if (!query) {
+    return { jobs: [], source: 'mock' };
   }
   
-  // An empty array from the API is a valid response, not an error.
+  const apiData = await fetchFromApi('search', { query, num_pages: '1' });
+  
+  // A null response from fetchFromApi indicates an API failure.
+  if (apiData === null) {
+      console.warn('API search failed. No jobs will be returned.');
+      return { jobs: [], source: 'mock' };
+  }
+  
   if (Array.isArray(apiData)) {
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
       return { jobs, source: 'api' };
   }
 
-  // If the data is not an array and not null, it's an unexpected format. Fallback.
-  console.warn('API returned unexpected data format, falling back to mock data.');
-  return { jobs: MOCK_JOBS, source: 'mock' };
+  // If the data is not an array and not null, it's an unexpected format.
+  console.warn('API returned unexpected data format, returning no jobs.');
+  return { jobs: [], source: 'mock' };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // Always get the full job list first, as it's our reliable source of truth.
-  const { jobs, source } = await getJobs();
-  const job = jobs.find(j => j.id === id);
-
-  if (job) {
-    return job;
+  const apiData = await fetchFromApi('job-details', { job_id: id });
+    
+  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
+    return transformApiJob(apiData[0]);
   }
-  
-  // If the job wasn't found in our list (from cache or a fresh API call), it's not available.
-  console.warn(`Could not find job with ID ${id} from the main job list.`);
+
+  // If API fails or returns no data, try finding it in the mock jobs as a last resort for local dev.
+  const jobFromMocks = MOCK_JOBS.find(j => j.id === id);
+  if (jobFromMocks) {
+    console.warn(`Could not find job with ID ${id} from API, falling back to mock data.`);
+    return jobFromMocks;
+  }
+
+  console.warn(`Could not find job with ID ${id} from API or mocks.`);
   return null;
 }
 

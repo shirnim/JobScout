@@ -1,11 +1,6 @@
-import { getJobs } from '@/lib/firebase/firestore';
 import JobSearchAndListings from '@/components/jobs/JobSearchAndListings';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Terminal } from 'lucide-react';
 
-export default async function Home() {
-  const { jobs, source } = await getJobs();
-
+export default function Home() {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="text-center mb-12">
@@ -17,17 +12,7 @@ export default async function Home() {
         </p>
       </div>
 
-      {source === 'mock' && (
-        <Alert variant="destructive" className="mb-8">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
-          <AlertDescription>
-            Could not connect to the live jobs API. The application is currently displaying sample data. To connect to the live API, please ensure your `NEXT_PUBLIC_RAPIDAPI_KEY` is set correctly in the `.env` file and restart the server.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <JobSearchAndListings initialJobs={jobs} />
+      <JobSearchAndListings />
     </div>
   );
 }

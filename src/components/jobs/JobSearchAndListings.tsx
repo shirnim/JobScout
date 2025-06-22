@@ -1,45 +1,44 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal } from 'lucide-react';
 import JobList from './JobList';
-
-interface JobSearchAndListingsProps {
-  initialJobs: Job[];
-}
+import { searchJobs } from '@/app/actions';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const JOBS_PER_PAGE = 9;
 
-export default function JobSearchAndListings({ initialJobs }: JobSearchAndListingsProps) {
-  const [searchTerm, setSearchTerm] = useState('');
+export default function JobSearchAndListings() {
+  const [query, setQuery] = useState('');
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [source, setSource] = useState<'api' | 'mock' | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const filteredJobs = useMemo(() => {
-    const lowercasedTerm = searchTerm.toLowerCase();
-    if (!lowercasedTerm) {
-      return initialJobs;
-    }
-    return initialJobs.filter(job =>
-      job.title.toLowerCase().includes(lowercasedTerm) ||
-      job.company.toLowerCase().includes(lowercasedTerm) ||
-      job.location.toLowerCase().includes(lowercasedTerm)
-    );
-  }, [searchTerm, initialJobs]);
+  const handleSearch = async () => {
+    if (!query.trim()) return;
 
-  useEffect(() => {
+    setIsLoading(true);
+    setHasSearched(true);
     setCurrentPage(1);
-  }, [searchTerm]);
+
+    const result = await searchJobs(query);
+    setJobs(result.jobs);
+    setSource(result.source);
+    setIsLoading(false);
+  };
 
   const paginatedJobs = useMemo(() => {
     const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
-    return filteredJobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
-  }, [currentPage, filteredJobs]);
+    return jobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
+  }, [currentPage, jobs]);
 
-  const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
+  const totalPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -54,7 +53,7 @@ export default function JobSearchAndListings({ initialJobs }: JobSearchAndListin
   };
 
   const handleExport = () => {
-    if (filteredJobs.length === 0) return;
+    if (jobs.length === 0) return;
 
     const headers = ["ID", "Title", "Company", "Location", "Date Posted", "Description", "Apply URL"];
     const escapeCsvCell = (cell: string | undefined | null): string => {
@@ -70,7 +69,7 @@ export default function JobSearchAndListings({ initialJobs }: JobSearchAndListin
 
     const csvRows = [
       headers.join(','),
-      ...filteredJobs.map(job => [
+      ...jobs.map(job => [
         escapeCsvCell(job.id),
         escapeCsvCell(job.title),
         escapeCsvCell(job.company),
@@ -104,37 +103,68 @@ export default function JobSearchAndListings({ initialJobs }: JobSearchAndListin
                 aria-label="Search jobs"
                 placeholder="Search by title, company, or location..."
                 className="w-full pl-12 pr-4 py-6 text-base rounded-lg shadow-sm focus-visible:ring-accent"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); }}}
                 />
             </div>
+            <Button 
+                onClick={handleSearch} 
+                className="w-full sm:w-auto shrink-0"
+                size="lg"
+                disabled={isLoading}
+            >
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4"/>}
+                Search
+            </Button>
             <Button 
                 onClick={handleExport} 
                 variant="outline" 
                 className="w-full sm:w-auto shrink-0" 
-                disabled={filteredJobs.length === 0}
+                size="lg"
+                disabled={jobs.length === 0 || isLoading}
             >
                 <FileDown className="mr-2 h-4 w-4" />
-                Export as CSV
+                Export
             </Button>
       </div>
 
-      <JobList jobs={paginatedJobs} />
-      
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center space-x-4 mt-8">
-          <Button onClick={handlePrevPage} disabled={currentPage === 1} variant="outline">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Previous
-          </Button>
-          <span className="text-sm font-medium text-muted-foreground">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button onClick={handleNextPage} disabled={currentPage >= totalPages} variant="outline">
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
+      {source === 'mock' && hasSearched && !isLoading && (
+        <Alert variant="destructive" className="mb-8">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
+          <AlertDescription>
+            Could not connect to the live jobs API. The application is currently displaying sample data. To connect to the live API, please ensure your `NEXT_PUBLIC_RAPIDAPI_KEY` is set correctly in the `.env` file and restart the server.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading && (
+        <div className="flex justify-center items-center py-20">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
+      )}
+      
+      {!isLoading && hasSearched && (
+        <>
+          <JobList jobs={paginatedJobs} />
+          
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center space-x-4 mt-8">
+              <Button onClick={handlePrevPage} disabled={currentPage === 1} variant="outline">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
+              <span className="text-sm font-medium text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button onClick={handleNextPage} disabled={currentPage >= totalPages} variant="outline">
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
