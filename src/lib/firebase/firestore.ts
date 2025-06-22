@@ -15,42 +15,44 @@ const MOCK_JOBS: Job[] = [
 
 
 async function fetchFromApi(endpoint: string, params: Record<string, string>) {
-    if (!RAPIDAPI_KEY || !RAPIDAPI_HOST || RAPIDAPI_KEY.includes('your-rapidapi-key')) {
-        console.warn("RapidAPI key not configured or is a placeholder. Using mock data. Please update .env file and RESTART the server.");
+    const key = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
+    const host = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
+
+    if (!key || !host || key.includes('your-rapidapi-key')) {
+        console.warn("[RapidAPI] Missing or placeholder API key. Using mock data.");
         return null;
     }
 
-    const url = new URL(`https://${RAPIDAPI_HOST}/${endpoint}`);
-    Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
+    const sanitizedHost = host.replace(/^https?:\/\//, '');
+    const url = new URL(`https://${sanitizedHost}/${endpoint}`);
+    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+
+    console.log(`[DEBUG] Fetching from: ${url.toString()}`);
 
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
             headers: {
-                'X-RapidAPI-Key': RAPIDAPI_KEY,
-                'X-RapidAPI-Host': RAPIDAPI_HOST,
+                'X-RapidAPI-Key': key,
+                'X-RapidAPI-Host': sanitizedHost,
             },
-            next: { revalidate: 3600 } // Cache for 1 hour
+            next: { revalidate: 3600 }
         });
 
         if (!response.ok) {
-            if (endpoint === 'job-details') {
-                // The 'job-details' endpoint is known to be unstable. 
-                // We will fail silently and let the caller handle the null response.
-                return null;
-            }
-            
-            console.error(`API request failed with status ${response.status}: ${await response.text()}. Falling back to mock data.`);
+            const text = await response.text();
+            console.error(`[ERROR] API failed (${response.status}): ${text}`);
             return null;
         }
 
         const result = await response.json();
-        return result.data;
-    } catch (error) {
-        console.error("Failed to fetch from RapidAPI. Falling back to mock data.", error);
+        return result.data; // JSearch returns `{ data: [...] }`
+    } catch (err) {
+        console.error("[ERROR] Network/API error:", err);
         return null;
     }
 }
+
 
 const transformApiJob = (apiJob: any): Job => ({
     id: apiJob.job_id,
