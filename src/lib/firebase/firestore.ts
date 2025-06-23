@@ -69,10 +69,8 @@ export async function getJobs(query: string, numPages: string = '10', filters: S
   if (!query) {
     return { jobs: [], source: 'mock' };
   }
-
-  const finalQuery = filters.location ? `${query} in ${filters.location}` : query;
   
-  const apiParams: Record<string, string> = { query: finalQuery, num_pages: numPages };
+  const apiParams: Record<string, string> = { query: query, num_pages: numPages };
     if (filters.employmentType && filters.employmentType !== 'all') {
         apiParams.employment_types = filters.employmentType;
     }

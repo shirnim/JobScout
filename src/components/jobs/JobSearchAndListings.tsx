@@ -38,7 +38,6 @@ export default function JobSearchAndListings() {
   const [employmentType, setEmploymentType] = useState('all');
   const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
-  const [locationFilter, setLocationFilter] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
@@ -84,7 +83,6 @@ export default function JobSearchAndListings() {
       employmentType,
       datePosted,
       remoteOnly,
-      location: locationFilter
     });
     
     const uniqueJobs = Array.from(new Map(result.jobs.map(job => [job.id, job])).values());
@@ -95,18 +93,11 @@ export default function JobSearchAndListings() {
         localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
     }
     setIsLoading(false);
-  }, [employmentType, datePosted, remoteOnly, locationFilter, isLoading]);
+  }, [employmentType, datePosted, remoteOnly, isLoading]);
 
 
   const handleApplyFilters = () => {
     let filtered = [...masterJobList];
-
-    // Location
-    if (locationFilter) {
-      filtered = filtered.filter(job => 
-        job.location?.toLowerCase().includes(locationFilter.toLowerCase())
-      );
-    }
 
     // Remote only
     if (remoteOnly) {
@@ -214,7 +205,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="Search by title, company, or keyword and press Enter..."
+              placeholder="Search by title, skill, or location..."
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -319,16 +310,6 @@ export default function JobSearchAndListings() {
                                     </p>
                                 </div>
                                 <div className="grid gap-4">
-                                    <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label htmlFor="location">Location</Label>
-                                        <Input
-                                            id="location"
-                                            value={locationFilter}
-                                            onChange={(e) => setLocationFilter(e.target.value)}
-                                            className="col-span-2 h-10"
-                                            placeholder="e.g. New York"
-                                        />
-                                    </div>
                                     <div className="grid grid-cols-3 items-center gap-4">
                                         <Label>Job Type</Label>
                                         <Select value={employmentType} onValueChange={setEmploymentType}>
