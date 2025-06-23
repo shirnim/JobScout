@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, User as UserIcon, Loader2, LayoutDashboard } from 'lucide-react';
+import { LogIn, LogOut, Loader2, LayoutDashboard, CircleUserRound } from 'lucide-react';
 import Link from 'next/link';
 
 const AuthButton = () => {
@@ -50,7 +50,7 @@ const AuthButton = () => {
               {...(isMockUser && { 'data-ai-hint': 'person face' })}
             />
             <AvatarFallback>
-              {user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />}
+              <CircleUserRound className="h-full w-full text-muted-foreground" />
             </AvatarFallback>
           </Avatar>
         </Button>
