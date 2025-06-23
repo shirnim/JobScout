@@ -108,8 +108,11 @@ export async function getJob(id: string): Promise<Job | null> {
     return transformApiJob(apiData[0]);
   }
 
-  // If the API call fails or returns no data, we return null.
-  // The page component will then handle this by showing a "Not Found" page.
-  // We no longer fall back to mock data here to avoid user confusion.
+  // If the API call fails or returns no data, fall back to mock data.
+  const mockJob = MOCK_JOBS.find(job => job.id === id);
+  if (mockJob) {
+      return mockJob;
+  }
+  
   return null;
 }
