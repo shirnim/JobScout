@@ -55,19 +55,18 @@ const enrichJobPostFlow = ai.defineFlow(
     outputSchema: EnrichJobPostOutputSchema,
   },
   async (input) => {
-    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
-      console.warn(
-        "AI feature 'enrichment' is disabled. To enable, set GEMINI_API_KEY or GOOGLE_API_KEY in your .env file."
-      );
-      throw new Error('AI feature is not configured.');
-    }
     try {
       const {output} = await prompt(input);
       if (!output) {
         throw new Error('AI enrichment returned no output.');
       }
       return output;
-    } catch (e) {
+    } catch (e: any) {
+      if (e.message?.includes('not found')) {
+        // This is the expected error when the API key is missing.
+        // We don't need to log a scary error. The warning at startup is enough.
+        throw new Error("AI feature is disabled. Please configure an API key.");
+      }
       console.error('Error during job post enrichment flow:', e);
       throw e; // re-throw to be handled by the caller
     }

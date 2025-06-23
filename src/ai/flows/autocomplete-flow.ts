@@ -63,11 +63,6 @@ const autocompleteFlow = ai.defineFlow(
     outputSchema: AutocompleteOutputSchema,
   },
   async (input) => {
-    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
-        console.warn("AI feature 'autocomplete' is disabled. To enable, set GEMINI_API_KEY or GOOGLE_API_KEY in your .env file.");
-        return { suggestions: [] };
-    }
-
     if (input.query.length < 3) {
       return { suggestions: [] };
     }
@@ -90,9 +85,13 @@ const autocompleteFlow = ai.defineFlow(
           return validation.data;
         }
       }
-    } catch (e) {
+    } catch (e: any) {
+      if (e.message?.includes('not found')) {
+        // AI is not configured, this is expected. Do nothing.
+        // The startup warning is sufficient.
+        return { suggestions: [] };
+      }
       console.error("Error during autocomplete flow execution:", e);
-      // Fall through to return empty suggestions
     }
     
     // If anything fails, return empty suggestions.
