@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal, Filter } from 'lucide-react';
+import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal, Filter, X } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -19,6 +19,9 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
+import { getAutocompleteSuggestions } from '@/ai/flows/autocomplete-flow';
+import { useDebounce } from '@/hooks/use-debounce';
+import { Card } from '@/components/ui/card';
 
 const JOBS_PER_PAGE = 5;
 
@@ -36,27 +39,60 @@ export default function JobSearchAndListings() {
   const [locationFilter, setLocationFilter] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const handleSearch = async () => {
-    if (!query.trim()) return;
+  // Autocomplete state
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const debouncedQuery = useDebounce(query, 300);
 
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      if (debouncedQuery.length < 3) {
+        setSuggestions([]);
+        return;
+      }
+      setIsSuggesting(true);
+      try {
+        const result = await getAutocompleteSuggestions({ query: debouncedQuery });
+        setSuggestions(result.suggestions || []);
+      } catch (error) {
+        console.error('Error fetching autocomplete suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setIsSuggesting(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, [debouncedQuery]);
+
+  const handleSearch = useCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) return;
+
+    setQuery(searchQuery);
+    setSuggestions([]);
+    setShowSuggestions(false);
     setIsLoading(true);
     setHasSearched(true);
     setCurrentPage(1);
 
-    const result = await searchJobs(query, {
+    const result = await searchJobs(searchQuery, {
       employmentType,
       datePosted,
       remoteOnly,
       location: locationFilter
     });
-    setMasterJobList(result.jobs);
-    setJobs(result.jobs);
+    
+    const uniqueJobs = Array.from(new Map(result.jobs.map(job => [job.id, job])).values());
+    setMasterJobList(uniqueJobs);
+    setJobs(uniqueJobs);
     setSource(result.source);
     if (typeof window !== 'undefined') {
-        localStorage.setItem('lastSearchResults', JSON.stringify(result.jobs));
+        localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
     }
     setIsLoading(false);
-  };
+  }, [employmentType, datePosted, remoteOnly, locationFilter]);
+
 
   const handleApplyFilters = () => {
     let filtered = [...masterJobList];
@@ -163,23 +199,69 @@ export default function JobSearchAndListings() {
     URL.revokeObjectURL(url);
   };
 
+  const handleSuggestionClick = (suggestion: string) => {
+    handleSearch(suggestion);
+  };
+
   return (
     <div>
         <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
             <div className="relative flex-grow w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                 <Input
-                type="text"
-                aria-label="Search jobs"
-                placeholder="Search by title, company, or keyword..."
-                className="w-full pl-12 pr-4 py-6 text-base rounded-lg shadow-sm focus-visible:ring-accent"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); }}}
+                  type="text"
+                  aria-label="Search jobs"
+                  placeholder="Search by title, company, or keyword..."
+                  className="w-full pl-12 pr-10 py-6 text-base rounded-lg shadow-sm focus-visible:ring-accent"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
+                  autoComplete="off"
                 />
+                 {query && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                        onClick={() => {
+                            setQuery('');
+                            setSuggestions([]);
+                        }}
+                    >
+                        <X className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                )}
+                {showSuggestions && (isSuggesting || suggestions.length > 0) && (
+                    <Card className="absolute z-50 w-full mt-2 overflow-hidden shadow-lg">
+                        {isSuggesting && (
+                            <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>Generating suggestions...</span>
+                            </div>
+                        )}
+                        {!isSuggesting && suggestions.length > 0 && (
+                            <ul className="py-2">
+                                {suggestions.map((suggestion, index) => (
+                                    <li
+                                        key={index}
+                                        className="px-4 py-2 cursor-pointer hover:bg-accent"
+                                        onMouseDown={(e) => { // use onMouseDown to fire before onBlur
+                                            e.preventDefault();
+                                            handleSuggestionClick(suggestion);
+                                        }}
+                                    >
+                                        {suggestion}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </Card>
+                )}
             </div>
             <Button 
-                onClick={handleSearch} 
+                onClick={() => handleSearch(query)} 
                 className="w-full sm:w-auto shrink-0"
                 size="lg"
                 disabled={isLoading}
