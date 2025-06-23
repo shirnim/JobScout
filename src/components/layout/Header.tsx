@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import AuthButton from '@/components/auth/AuthButton';
-import { Briefcase } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Briefcase, LayoutDashboard, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
   const pathname = usePathname();
@@ -17,27 +17,19 @@ const Header = () => {
             <Briefcase />
             <span className="font-headline">JobScout</span>
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/search"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                pathname === '/search' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              Search
-            </Link>
-            <Link
-              href="/dashboard"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                pathname === '/dashboard'
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
-              )}
-            >
-              Dashboard
-            </Link>
+          <nav className="flex items-center gap-2">
+            <Button asChild variant={pathname === '/search' ? 'secondary' : 'ghost'}>
+              <Link href="/search">
+                <Search className="h-4 w-4" />
+                Search
+              </Link>
+            </Button>
+            <Button asChild variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}>
+              <Link href="/dashboard">
+                <LayoutDashboard className="h-4 w-4" />
+                Dashboard
+              </Link>
+            </Button>
             <AuthButton />
           </nav>
         </div>
