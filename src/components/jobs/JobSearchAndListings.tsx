@@ -71,7 +71,7 @@ export default function JobSearchAndListings() {
   }, [debouncedQuery]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim() || isLoading) return;
 
     setQuery(searchQuery);
     setSuggestions([]);
@@ -95,7 +95,7 @@ export default function JobSearchAndListings() {
         localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
     }
     setIsLoading(false);
-  }, [employmentType, datePosted, remoteOnly, locationFilter]);
+  }, [employmentType, datePosted, remoteOnly, locationFilter, isLoading]);
 
 
   const handleApplyFilters = () => {
@@ -210,7 +210,11 @@ export default function JobSearchAndListings() {
   return (
     <div>
         <div className="relative w-full mb-8">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+            {isLoading ? (
+                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 animate-spin" />
+            ) : (
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+            )}
             <Input
               type="text"
               aria-label="Search jobs"
@@ -222,8 +226,9 @@ export default function JobSearchAndListings() {
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
               autoComplete="off"
+              disabled={isLoading}
             />
-             {query && (
+             {query && !isLoading && (
                 <Button
                     variant="ghost"
                     size="icon"
