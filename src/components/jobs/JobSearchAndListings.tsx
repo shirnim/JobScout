@@ -24,7 +24,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Card } from '@/components/ui/card';
 import JobDetailsModal from './JobDetailsModal';
 
-const JOBS_PER_PAGE = 5;
+const JOBS_PER_PAGE = 9;
 
 export default function JobSearchAndListings() {
   const [query, setQuery] = useState('');
@@ -214,7 +214,7 @@ export default function JobSearchAndListings() {
               type="text"
               aria-label="Search jobs"
               placeholder="Search by title, company, or keyword and press Enter..."
-              className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base md:text-sm"
+              className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
