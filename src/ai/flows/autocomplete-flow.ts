@@ -25,36 +25,16 @@ export async function getAutocompleteSuggestions(input: AutocompleteInput): Prom
   return autocompleteFlow(input);
 }
 
-// We will parse the output manually for more robustness.
 const prompt = ai.definePrompt({
   name: 'autocompletePrompt',
   input: {schema: AutocompleteInputSchema},
+  output: {schema: AutocompleteOutputSchema},
   prompt: `You are an API that provides autocomplete suggestions for a job search engine.
-Given the user's partial query, return a JSON object with a 'suggestions' key, which is an array of up to 5 relevant and common job search strings.
-Provide ONLY the JSON object, with no other text, markdown, or commentary.
-
-Examples:
-- If the query is "react", return: {"suggestions": ["react developer", "react native jobs", "senior react engineer"]}
-- If the query is "mumbai", return: {"suggestions": ["jobs in mumbai", "software engineer mumbai", "frontend developer mumbai"]}
+Given the user's partial query, return up to 5 relevant and common job search strings.
 
 User query: {{{query}}}
 `,
 });
-
-// Helper function to extract a JSON object from a string.
-function extractJson(str: string): any {
-    // This regex looks for a JSON object either inside ```json ... ``` or as a standalone object.
-    const match = str.match(/```json\n([\s\S]*?)\n```|({[\s\S]*})/);
-    if (match) {
-        const jsonStr = match[1] || match[2];
-        try {
-            return JSON.parse(jsonStr);
-        } catch (e) {
-            // Fall through if parsing fails
-        }
-    }
-    return null;
-}
 
 const autocompleteFlow = ai.defineFlow(
   {
@@ -68,27 +48,16 @@ const autocompleteFlow = ai.defineFlow(
     }
     
     try {
-      // Call the prompt and get the raw text response
-      const response = await prompt(input);
-      const text = response.text;
-
-      if (!text) {
+      const { output } = await prompt(input);
+      if (!output) {
         return { suggestions: [] };
       }
-
-      const parsedJson = extractJson(text);
-
-      // Validate the parsed JSON against our desired schema
-      if (parsedJson) {
-        const validation = AutocompleteOutputSchema.safeParse(parsedJson);
-        if (validation.success) {
-          return validation.data;
-        }
-      }
+      return output;
     } catch (e: any) {
-      if (e.message?.includes('not found')) {
-        // AI is not configured, this is expected. Do nothing.
-        // The startup warning is sufficient.
+      // Check for specific Genkit error indicating misconfiguration
+      if (e.status === 'FAILED_PRECONDITION' || e.message?.includes('not found')) {
+        // This is the expected error when the API key is missing or invalid.
+        // We don't need to log a scary error. The warning at startup is enough.
         return { suggestions: [] };
       }
       console.error("Error during autocomplete flow execution:", e);
