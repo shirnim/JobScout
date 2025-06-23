@@ -148,8 +148,8 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
   
   return (
     <Dialog open={!!initialJob} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-3xl p-0">
-        <ScrollArea className="max-h-[90vh]">
+      <DialogContent className="sm:max-w-3xl p-0 grid grid-rows-[1fr_auto] max-h-[90vh]">
+        <ScrollArea>
             <div className="p-6">
                 {isLoading && (
                     <div className="space-y-4">
@@ -214,7 +214,7 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
             </div>
         </ScrollArea>
         {jobToDisplay && !isLoading && !error && (
-            <DialogFooter className="p-6 pt-4 bg-background border-t sticky bottom-0">
+            <DialogFooter className="p-6 bg-background border-t">
                 <Button variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
                 <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
                     <Link href={jobToDisplay.applyUrl} target="_blank" rel="noopener noreferrer">Apply Now</Link>
