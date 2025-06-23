@@ -28,14 +28,12 @@ const prompt = ai.definePrompt({
   name: 'autocompletePrompt',
   input: {schema: AutocompleteInputSchema},
   output: {schema: AutocompleteOutputSchema},
-  prompt: `You are a helpful assistant that provides autocomplete suggestions for a job search engine.
-Based on the user's partial query, provide a list of 5 relevant and common job search terms.
+  prompt: `You are an autocomplete assistant for a job search engine.
+Given the user's partial query, provide 5 relevant and common job search terms.
 The suggestions should be diverse and cover job titles, skills, and technologies.
 Do not repeat the user's query in the suggestions.
 
 User query: {{{query}}}
-
-Return a JSON object with a single key "suggestions" containing an array of strings.
 `,
 });
 
