@@ -210,11 +210,7 @@ export default function JobSearchAndListings() {
   return (
     <div>
         <div className="relative w-full mb-8">
-            {isLoading ? (
-                <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10 animate-spin" />
-            ) : (
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-            )}
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
             <Input
               type="text"
               aria-label="Search jobs"
@@ -369,7 +365,7 @@ export default function JobSearchAndListings() {
                                 </div>
                                  <Button onClick={handleApplyFilters} disabled={isLoading || masterJobList.length === 0} className="w-full">
                                     Apply Filters
-                                </Button>
+                                 </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
