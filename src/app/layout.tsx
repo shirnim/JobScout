@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/lib/firebase/auth';
@@ -15,6 +16,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const adSensePublisherId = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID;
+
   return (
     <html lang="en" className="light" style={{ scrollBehavior: 'smooth' }}>
       <head>
@@ -24,6 +27,15 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
+        {adSensePublisherId && adSensePublisherId !== 'ca-pub-XXXXXXXXXXXXXXXX' && (
+            <Script
+                id="adsense-script"
+                async
+                src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adSensePublisherId}`}
+                crossOrigin="anonymous"
+                strategy="afterInteractive"
+            />
+        )}
       </head>
       <body className="font-body antialiased bg-background">
         <AuthProvider>

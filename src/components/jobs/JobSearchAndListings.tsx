@@ -24,6 +24,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import { Card } from '@/components/ui/card';
 import JobDetailsModal from './JobDetailsModal';
 import JobListSkeleton from './JobListSkeleton';
+import AdBanner from '@/components/ads/AdBanner';
 
 const JOBS_PER_PAGE = 9;
 
@@ -260,6 +261,8 @@ export default function JobSearchAndListings() {
                 </Card>
             )}
         </div>
+
+        <AdBanner />
 
         {source === 'mock' && hasSearched && !isLoading && (
             <Alert variant="destructive" className="mb-8">
