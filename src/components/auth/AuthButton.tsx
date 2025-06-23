@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from '@/lib/firebase/auth';
@@ -8,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuGroup,
@@ -43,7 +41,7 @@ const AuthButton = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:bg-muted/50 focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-2">
           <Avatar className="h-10 w-10">
             <AvatarImage
               src={photoSrc}
@@ -56,13 +54,19 @@ const AuthButton = () => {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.displayName || user.email}</p>
-            {user.displayName && <p className="text-xs leading-none text-muted-foreground">{user.email}</p>}
-          </div>
-        </DropdownMenuLabel>
+      <DropdownMenuContent className="w-64" align="end" forceMount>
+        <div className="flex flex-col items-center gap-2 p-4">
+            <Avatar className="h-16 w-16">
+                <AvatarImage src={photoSrc} alt={user.displayName || 'User Avatar'} />
+                <AvatarFallback>
+                    <CircleUserRound className="h-full w-full text-muted-foreground" />
+                </AvatarFallback>
+            </Avatar>
+            <div className="text-center">
+                <p className="text-base font-medium leading-none">{user.displayName || user.email?.split('@')[0]}</p>
+                <p className="text-sm leading-none text-muted-foreground">{user.email}</p>
+            </div>
+        </div>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
            <DropdownMenuItem asChild>
