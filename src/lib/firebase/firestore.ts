@@ -9,7 +9,7 @@ const MOCK_JOBS: Job[] = [
   { id: '2', title: 'Backend Engineer (Node.js)', company: 'DataSolutions', location: 'San Francisco, CA', datePosted: '2024-05-19T14:30:00Z', description: 'DataSolutions is seeking a Backend Engineer with expertise in Node.js to develop and maintain our server-side logic. You will work on database integrations, API development, and ensuring the scalability and security of our applications. Experience with microservices architecture and cloud platforms like AWS or GCP is highly desirable.', applyUrl: '#' },
   { id: '3', title: 'Product Manager', company: 'Innovate Inc.', location: 'Remote', datePosted: '2024-05-22T09:00:00Z', description: 'As a Product Manager at Innovate Inc., you will drive the product vision and roadmap. You will work closely with engineering, design, and marketing teams to define product requirements, prioritize features, and deliver products that delight our users. Strong communication and leadership skills are essential.', applyUrl: '#' },
   { id: '4', title: 'UX/UI Designer', company: 'CreativeMinds', location: 'Austin, TX', datePosted: '2024-05-18T11:00:00Z', description: 'CreativeMinds is looking for a talented UX/UI Designer to create intuitive and visually appealing interfaces for our web and mobile applications. You will be involved in the entire design process, from user research and wireframing to creating high-fidelity mockups and prototypes. A strong portfolio is required.', applyUrl: '#' },
-  { id: '5', title: 'DevOps Engineer', company: 'CloudNet', location: 'Seattle, WA', datePosted: '2024-05-21T16:00:00Z', description: "Join our CloudNet team as a DevOps Engineer and help us build and maintain our CI/CD pipelines and cloud infrastructure. You will be responsible for automating deployments, monitoring system health, and ensuring the reliability and scalability of our services. Experience with Docker, Kubernetes, and Terraform is a plus.", applyUrl: '#' },
+  { id: '5', title: 'DevOps Engineer', company: 'CloudNet', location: 'Seattle, WA', datePosted: '2024-05-21T16:00:00Z', description: 'Join our CloudNet team as a DevOps Engineer and help us build and maintain our CI/CD pipelines and cloud infrastructure. You will be responsible for automating deployments, monitoring system health, and ensuring the reliability and scalability of our services. Experience with Docker, Kubernetes, and Terraform is a plus.', applyUrl: '#' },
   { id: '6', title: 'Data Scientist', company: 'AlphaAnalytics', location: 'Boston, MA', datePosted: '2024-05-15T12:00:00Z', description: 'AlphaAnalytics is hiring a Data Scientist to analyze large datasets and extract actionable insights. You will develop machine learning models, create data visualizations, and work with stakeholders to solve complex business problems. Proficiency in Python, R, and SQL is required.', applyUrl: '#' },
 ];
 
@@ -70,8 +70,10 @@ export async function getJobs(query: string, numPages: string = '1', filters: Se
   if (!query) {
     return { jobs: [], source: 'mock' };
   }
+
+  const finalQuery = filters.location ? `${query} in ${filters.location}` : query;
   
-  const apiParams: Record<string, string> = { query, num_pages: numPages };
+  const apiParams: Record<string, string> = { query: finalQuery, num_pages: numPages };
     if (filters.employmentType && filters.employmentType !== 'all') {
         apiParams.employment_types = filters.employmentType;
     }

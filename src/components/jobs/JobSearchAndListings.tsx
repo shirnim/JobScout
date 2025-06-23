@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal } from 'lucide-react';
+import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal, Filter } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
 
 const JOBS_PER_PAGE = 5;
 
@@ -27,9 +29,10 @@ export default function JobSearchAndListings() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [employmentType, setEmploymentType] = useState('');
-  const [datePosted, setDatePosted] = useState('');
+  const [employmentType, setEmploymentType] = useState('all');
+  const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [locationFilter, setLocationFilter] = useState('');
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -41,7 +44,8 @@ export default function JobSearchAndListings() {
     const result = await searchJobs(query, {
       employmentType,
       datePosted,
-      remoteOnly
+      remoteOnly,
+      location: locationFilter
     });
     setJobs(result.jobs);
     setSource(result.source);
@@ -113,7 +117,7 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
             <div className="relative flex-grow w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -145,42 +149,75 @@ export default function JobSearchAndListings() {
                 <FileDown className="mr-2 h-4 w-4" />
                 Export
             </Button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
-            <Select value={employmentType} onValueChange={setEmploymentType}>
-                <SelectTrigger className="w-full sm:w-auto sm:w-48">
-                    <SelectValue placeholder="Job Type" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="FULLTIME">Full-time</SelectItem>
-                    <SelectItem value="PARTTIME">Part-time</SelectItem>
-                    <SelectItem value="CONTRACTOR">Contract</SelectItem>
-                    <SelectItem value="INTERN">Internship</SelectItem>
-                </SelectContent>
-            </Select>
-            <Select value={datePosted} onValueChange={setDatePosted}>
-                <SelectTrigger className="w-full sm:w-auto sm:w-48">
-                    <SelectValue placeholder="Date Posted" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Any time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="3days">Last 3 days</SelectItem>
-                    <SelectItem value="week">Last week</SelectItem>
-                    <SelectItem value="month">Last month</SelectItem>
-                </SelectContent>
-            </Select>
-            <div className="flex items-center space-x-2 self-start sm:self-center pt-2 sm:pt-0">
-                <Checkbox id="remote-only" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
-                <label
-                    htmlFor="remote-only"
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                    Remote only
-                </label>
-            </div>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto shrink-0">
+                        <Filter className="mr-2 h-4 w-4" />
+                        Filters
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Filters</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Refine your job search.
+                            </p>
+                        </div>
+                        <div className="grid gap-4">
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label htmlFor="location">Location</Label>
+                                <Input
+                                    id="location"
+                                    value={locationFilter}
+                                    onChange={(e) => setLocationFilter(e.target.value)}
+                                    className="col-span-2 h-10"
+                                    placeholder="e.g. New York"
+                                />
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label>Job Type</Label>
+                                <Select value={employmentType} onValueChange={setEmploymentType}>
+                                    <SelectTrigger className="col-span-2 h-10">
+                                        <SelectValue placeholder="Job Type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Types</SelectItem>
+                                        <SelectItem value="FULLTIME">Full-time</SelectItem>
+                                        <SelectItem value="PARTTIME">Part-time</SelectItem>
+                                        <SelectItem value="CONTRACTOR">Contract</SelectItem>
+                                        <SelectItem value="INTERN">Internship</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-3 items-center gap-4">
+                                <Label>Date Posted</Label>
+                                <Select value={datePosted} onValueChange={setDatePosted}>
+                                    <SelectTrigger className="col-span-2 h-10">
+                                        <SelectValue placeholder="Date Posted" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Any time</SelectItem>
+                                        <SelectItem value="today">Today</SelectItem>
+                                        <SelectItem value="3days">Last 3 days</SelectItem>
+                                        <SelectItem value="week">Last week</SelectItem>
+                                        <SelectItem value="month">Last month</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex items-center space-x-2 pt-2 pl-1">
+                                <Checkbox id="remote-only-popover" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
+                                <label
+                                    htmlFor="remote-only-popover"
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                >
+                                    Remote only
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
         </div>
 
         {source === 'mock' && hasSearched && !isLoading && (

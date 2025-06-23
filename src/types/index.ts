@@ -19,4 +19,5 @@ export interface SearchFilters {
   employmentType?: string;
   datePosted?: string;
   remoteOnly?: boolean;
+  location?: string;
 }
