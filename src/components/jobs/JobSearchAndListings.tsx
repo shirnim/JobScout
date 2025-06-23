@@ -23,6 +23,7 @@ import { getAutocompleteSuggestions } from '@/ai/flows/autocomplete-flow';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Card } from '@/components/ui/card';
 import JobDetailsModal from './JobDetailsModal';
+import JobListSkeleton from './JobListSkeleton';
 
 const JOBS_PER_PAGE = 9;
 
@@ -277,9 +278,7 @@ export default function JobSearchAndListings() {
         )}
 
         {isLoading && (
-            <div className="flex justify-center items-center py-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            </div>
+            <JobListSkeleton />
         )}
       
         {!isLoading && hasSearched && (
