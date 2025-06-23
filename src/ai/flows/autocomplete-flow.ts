@@ -48,6 +48,8 @@ const autocompleteFlow = ai.defineFlow(
         return { suggestions: [] };
     }
     const {output} = await prompt(input);
-    return output!;
+    // If the model output doesn't conform to the schema, output can be null.
+    // We return an empty list in that case to prevent errors.
+    return output || { suggestions: [] };
   }
 );

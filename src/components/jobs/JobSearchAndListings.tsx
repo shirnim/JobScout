@@ -243,9 +243,9 @@ export default function JobSearchAndListings() {
                         )}
                         {!isSuggesting && suggestions.length > 0 && (
                             <ul className="py-2">
-                                {suggestions.map((suggestion, index) => (
+                                {suggestions.map((suggestion) => (
                                     <li
-                                        key={index}
+                                        key={suggestion}
                                         className="px-4 py-2 cursor-pointer hover:bg-accent"
                                         onMouseDown={(e) => { // use onMouseDown to fire before onBlur
                                             e.preventDefault();
