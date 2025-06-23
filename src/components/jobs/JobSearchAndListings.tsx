@@ -33,6 +33,7 @@ export default function JobSearchAndListings() {
   const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [locationFilter, setLocationFilter] = useState('');
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -53,6 +54,12 @@ export default function JobSearchAndListings() {
         localStorage.setItem('lastSearchResults', JSON.stringify(result.jobs));
     }
     setIsLoading(false);
+  };
+
+  const handleApplyFilters = () => {
+    // `handleSearch` already checks for a valid query
+    handleSearch();
+    setIsFilterOpen(false);
   };
 
   const paginatedJobs = useMemo(() => {
@@ -149,7 +156,7 @@ export default function JobSearchAndListings() {
                 <FileDown className="mr-2 h-4 w-4" />
                 Export
             </Button>
-            <Popover>
+            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
                 <PopoverTrigger asChild>
                     <Button variant="outline" size="lg" className="w-full sm:w-auto shrink-0">
                         <Filter className="mr-2 h-4 w-4" />
@@ -215,6 +222,9 @@ export default function JobSearchAndListings() {
                                 </label>
                             </div>
                         </div>
+                         <Button onClick={handleApplyFilters} disabled={isLoading || !query.trim()} className="w-full">
+                            Apply Filters
+                        </Button>
                     </div>
                 </PopoverContent>
             </Popover>
