@@ -54,8 +54,22 @@ const enrichJobPostFlow = ai.defineFlow(
     inputSchema: EnrichJobPostInputSchema,
     outputSchema: EnrichJobPostOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input) => {
+    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+      console.warn(
+        "AI feature 'enrichment' is disabled. To enable, set GEMINI_API_KEY or GOOGLE_API_KEY in your .env file."
+      );
+      throw new Error('AI feature is not configured.');
+    }
+    try {
+      const {output} = await prompt(input);
+      if (!output) {
+        throw new Error('AI enrichment returned no output.');
+      }
+      return output;
+    } catch (e) {
+      console.error('Error during job post enrichment flow:', e);
+      throw e; // re-throw to be handled by the caller
+    }
   }
 );

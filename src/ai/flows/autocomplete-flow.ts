@@ -63,19 +63,24 @@ const autocompleteFlow = ai.defineFlow(
     outputSchema: AutocompleteOutputSchema,
   },
   async (input) => {
+    if (!process.env.GEMINI_API_KEY && !process.env.GOOGLE_API_KEY) {
+        console.warn("AI feature 'autocomplete' is disabled. To enable, set GEMINI_API_KEY or GOOGLE_API_KEY in your .env file.");
+        return { suggestions: [] };
+    }
+
     if (input.query.length < 3) {
       return { suggestions: [] };
     }
     
-    // Call the prompt and get the raw text response
-    const response = await prompt(input);
-    const text = response.text;
-
-    if (!text) {
-      return { suggestions: [] };
-    }
-
     try {
+      // Call the prompt and get the raw text response
+      const response = await prompt(input);
+      const text = response.text;
+
+      if (!text) {
+        return { suggestions: [] };
+      }
+
       const parsedJson = extractJson(text);
 
       // Validate the parsed JSON against our desired schema
@@ -86,7 +91,8 @@ const autocompleteFlow = ai.defineFlow(
         }
       }
     } catch (e) {
-      console.error("Error processing autocomplete suggestions:", e);
+      console.error("Error during autocomplete flow execution:", e);
+      // Fall through to return empty suggestions
     }
     
     // If anything fails, return empty suggestions.
