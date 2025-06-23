@@ -30,7 +30,8 @@ const prompt = ai.definePrompt({
   output: {schema: AutocompleteOutputSchema},
   prompt: `You are an autocomplete assistant for a job search engine.
 Given the user's partial query, provide 5 relevant and common job search terms.
-The suggestions should be diverse and cover job titles, skills, and technologies.
+The suggestions should be diverse and cover job titles, skills, technologies, and locations.
+For example, if the query is "react", suggestions could be "react developer", "react jobs". If the query is "mumbai", suggestions could be "jobs in mumbai", "software engineer mumbai".
 Do not repeat the user's query in the suggestions.
 
 User query: {{{query}}}
