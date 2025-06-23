@@ -101,25 +101,13 @@ export async function getJobs(query: string, numPages: string = '10', filters: S
 
 export async function getJob(id: string): Promise<Job | null> {
   // 1. Try fetching from job-details endpoint
-  let apiData = await fetchFromApi('job-details', { job_id: id, extended_publisher_details: 'false' });
+  const apiData = await fetchFromApi('job-details', { job_id: id });
     
   if (apiData && Array.isArray(apiData) && apiData.length > 0) {
     return transformApiJob(apiData[0]);
   }
 
-  // 2. If details fails, try the search endpoint as a fallback
-  console.warn(`[API Fallback] Job details for ${id} failed or returned no data. Retrying with search endpoint.`);
-  apiData = await fetchFromApi('search', { query: id, num_pages: '1' });
-
-  if (apiData && Array.isArray(apiData)) {
-    // Find the specific job in the search results
-    const jobData = apiData.find(job => job.job_id === id);
-    if (jobData) {
-      return transformApiJob(jobData);
-    }
-  }
-
-  // 3. If both API calls fail, fall back to mock data
+  // 2. If API fails, fall back to checking mock data just in case.
   const mockJob = MOCK_JOBS.find(job => job.id === id);
   if (mockJob) {
       console.warn(`[Mock Fallback] Could not find job ${id} via API. Serving mock data.`);
