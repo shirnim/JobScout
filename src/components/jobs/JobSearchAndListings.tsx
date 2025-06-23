@@ -153,7 +153,7 @@ export default function JobSearchAndListings() {
                     <SelectValue placeholder="Job Type" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="FULLTIME">Full-time</SelectItem>
                     <SelectItem value="PARTTIME">Part-time</SelectItem>
                     <SelectItem value="CONTRACTOR">Contract</SelectItem>
@@ -165,7 +165,7 @@ export default function JobSearchAndListings() {
                     <SelectValue placeholder="Date Posted" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">Any time</SelectItem>
+                    <SelectItem value="all">Any time</SelectItem>
                     <SelectItem value="today">Today</SelectItem>
                     <SelectItem value="3days">Last 3 days</SelectItem>
                     <SelectItem value="week">Last week</SelectItem>
