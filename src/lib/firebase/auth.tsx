@@ -47,11 +47,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
             const mockUser = mockUsers.find((u: any) => u && u.email === mockUserEmail);
             if (mockUser) {
+              const color = mockUser.color || 'cccccc';
               setUser({
                 uid: `mock-${mockUser.email}`,
                 displayName: mockUser.email.split('@')[0],
                 email: mockUser.email,
-                photoURL: `https://placehold.co/100x100.png`,
+                photoURL: `https://placehold.co/100x100/${color}/FFFFFF.png`,
               } as User);
             }
           }
@@ -78,11 +79,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               throw new Error("Invalid email or password. Please try again.");
           }
           
+          const color = mockUser.color || 'cccccc';
           const loggedInUser = {
             uid: `mock-${trimmedEmail}`,
             displayName: trimmedEmail.split('@')[0],
             email: trimmedEmail,
-            photoURL: `https://placehold.co/100x100.png`,
+            photoURL: `https://placehold.co/100x100/${color}/FFFFFF.png`,
           } as User;
 
           setUser(loggedInUser);
@@ -104,14 +106,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mockUsers.some((u: any) => u && u.email && u.email.trim() === trimmedEmail)) {
             throw new Error("An account with this email already exists.");
         }
-        mockUsers.push({ email: trimmedEmail, password: password });
+        
+        const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        mockUsers.push({ email: trimmedEmail, password: password, color: randomColor });
         localStorage.setItem('mock-users', JSON.stringify(mockUsers));
         
         const newUser = {
             uid: `mock-${trimmedEmail}`,
             displayName: trimmedEmail.split('@')[0],
             email: trimmedEmail,
-            photoURL: `https://placehold.co/100x100.png`,
+            photoURL: `https://placehold.co/100x100/${randomColor}/FFFFFF.png`,
         } as User;
 
         setUser(newUser);
@@ -129,7 +133,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         uid: 'mock-google-user-123',
         displayName: 'Google User',
         email: 'google@example.com',
-        photoURL: `https://placehold.co/100x100.png`,
+        photoURL: `https://placehold.co/100x100/DB4437/FFFFFF.png`,
       } as User;
       setUser(mockGoogleUser);
       if (typeof window !== 'undefined') {
