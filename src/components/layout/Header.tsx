@@ -12,6 +12,9 @@ const Header = () => {
             <span className="font-headline">JobScout</span>
           </Link>
           <nav className="flex items-center gap-4">
+            <Link href="/search" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+              Search
+            </Link>
             <Link href="/dashboard" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
               Dashboard
             </Link>

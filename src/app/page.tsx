@@ -1,4 +1,3 @@
-import JobSearchAndListings from '@/components/jobs/JobSearchAndListings';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Zap, Search, BarChart3, Briefcase, FileText, CheckCircle } from 'lucide-react';
@@ -57,8 +56,8 @@ const TestimonialCard = ({ quote, name, title, avatarSrc, avatarHint }: { quote:
 export default function Home() {
   return (
     <div className="space-y-24 md:space-y-32">
-      {/* Hero & Search Section */}
-      <section id="search-section" className="text-center pt-8 md:pt-16">
+      {/* Hero Section */}
+      <section className="text-center pt-8 md:pt-16">
         <div className="max-w-5xl mx-auto">
             <h1 className="text-4xl md:text-6xl font-bold tracking-tighter text-foreground font-headline">
             Unlock Your Next Career Move
@@ -66,7 +65,14 @@ export default function Home() {
             <p className="mt-4 mb-12 text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
             JobScout is your AI-powered co-pilot for navigating the job market. Search millions of jobs, gain data-driven insights, and get hired faster.
             </p>
-            <JobSearchAndListings />
+            <div className="flex justify-center gap-4">
+                <Button asChild size="lg">
+                    <Link href="/search">Find a Job</Link>
+                </Button>
+                 <Button asChild size="lg" variant="outline">
+                    <Link href="/signup">Get Started</Link>
+                </Button>
+            </div>
         </div>
       </section>
 
@@ -145,7 +151,7 @@ export default function Home() {
         </p>
         <div className="mt-8">
             <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
-                <Link href="#search-section">Get Started for Free</Link>
+                <Link href="/signup">Get Started for Free</Link>
             </Button>
         </div>
       </section>

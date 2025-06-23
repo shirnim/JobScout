@@ -68,7 +68,7 @@ export default async function JobPage({ params }: { params: { id: string } }) {
   return (
     <div className="max-w-4xl mx-auto">
         <Button asChild variant="ghost" className="mb-4">
-            <Link href="/"><ChevronLeft className="mr-2 h-4 w-4" />Back to jobs</Link>
+            <Link href="/search"><ChevronLeft className="mr-2 h-4 w-4" />Back to jobs</Link>
         </Button>
       <Card className="overflow-hidden shadow-lg">
         <CardHeader className="p-6">

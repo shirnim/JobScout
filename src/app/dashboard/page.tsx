@@ -47,9 +47,9 @@ const NoDataState = () => (
                 <CardTitle className="mt-4 text-2xl">No Analytics Data</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">Search for jobs on the home page to see analytics here.</p>
+                <p className="text-muted-foreground">Search for jobs on the search page to see analytics here.</p>
                 <Button asChild className="mt-6">
-                    <Link href="/">Go to Search</Link>
+                    <Link href="/search">Go to Search</Link>
                 </Button>
             </CardContent>
         </Card>
