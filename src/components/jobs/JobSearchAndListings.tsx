@@ -205,7 +205,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="Search by title, skill, or location..."
+              placeholder="e.g., Quality Assurance in London"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
