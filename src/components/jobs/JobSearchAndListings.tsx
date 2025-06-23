@@ -238,12 +238,13 @@ export default function JobSearchAndListings() {
             )}
             {showSuggestions && debouncedQuery.length >= 3 && (
                 <Card className="absolute z-50 w-full mt-2 overflow-hidden shadow-lg">
-                    {isSuggesting ? (
+                    {isSuggesting && (
                         <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             <span>Generating suggestions...</span>
                         </div>
-                    ) : suggestions.length > 0 ? (
+                    )}
+                    {!isSuggesting && suggestions.length > 0 && (
                         <ul className="py-2">
                             {suggestions.map((suggestion) => (
                                 <li
@@ -258,7 +259,8 @@ export default function JobSearchAndListings() {
                                 </li>
                             ))}
                         </ul>
-                    ) : (
+                    )}
+                    {!isSuggesting && suggestions.length === 0 && (
                          <div className="p-4 text-sm text-muted-foreground">
                             No suggestions found for &quot;{debouncedQuery}&quot;.
                         </div>
