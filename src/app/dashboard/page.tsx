@@ -26,7 +26,10 @@ const StatCard = ({ title, value, icon: Icon }: { title: string, value: string |
 
 const DashboardSkeleton = () => (
     <div className="max-w-7xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
+         <div>
+            <Skeleton className="h-10 w-1/4 mb-3" />
+            <Skeleton className="h-6 w-1/2" />
+        </div>
         <div className="grid gap-4 md:grid-cols-3">
             <Skeleton className="h-28" />
             <Skeleton className="h-28" />
@@ -115,7 +118,12 @@ export default function DashboardPage() {
     if (!analytics || analytics.totalJobs === 0) {
         return (
              <div className="max-w-7xl mx-auto space-y-8">
-                <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
+                <div>
+                    <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
+                    <p className="mt-2 text-lg text-muted-foreground">
+                        Search for jobs to see your personalized analytics.
+                    </p>
+                </div>
                 <NoDataState />
             </div>
         )
@@ -123,7 +131,12 @@ export default function DashboardPage() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
+            <div>
+                <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
+                <p className="mt-2 text-lg text-muted-foreground">
+                    Here's a data-driven overview of the jobs you've analyzed.
+                </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <StatCard title="Jobs Analyzed" value={analytics.totalJobs.toLocaleString()} icon={Briefcase} />
                 <StatCard title="Top Location" value={analytics.topLocations.length > 0 ? analytics.topLocations[0].location : 'N/A'} icon={MapPin} />
