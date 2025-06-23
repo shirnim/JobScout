@@ -38,14 +38,13 @@ const AuthButton = () => {
     );
   }
 
-  const isMockUser = user.uid.startsWith('mock-');
-  const photoSrc = isMockUser ? `https://placehold.co/100x100.png` : user.photoURL || '';
+  const photoSrc = user.photoURL || '';
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border">
+          <Avatar className="h-10 w-10">
             <AvatarImage
               src={photoSrc}
               alt={user.displayName || 'User Avatar'}
@@ -66,7 +65,7 @@ const AuthButton = () => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-           <DropdownMenuItem asChild className="cursor-pointer">
+           <DropdownMenuItem asChild>
              <Link href="/dashboard">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 <span>Dashboard</span>
@@ -74,7 +73,7 @@ const AuthButton = () => {
            </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
+        <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive focus:bg-destructive/10">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
