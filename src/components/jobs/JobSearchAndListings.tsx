@@ -281,7 +281,13 @@ export default function JobSearchAndListings() {
         )}
 
         {isLoading && (
-            <JobListSkeleton />
+            <div className="space-y-6">
+                <div className="flex justify-center items-center gap-3 text-muted-foreground pt-8">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <p className="text-xl font-medium">Fetching the latest opportunities...</p>
+                </div>
+                <JobListSkeleton />
+            </div>
         )}
       
         {!isLoading && hasSearched && (
@@ -403,3 +409,5 @@ export default function JobSearchAndListings() {
     </div>
   );
 }
+
+    
