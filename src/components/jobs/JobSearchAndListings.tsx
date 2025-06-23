@@ -205,14 +205,14 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <div className="flex flex-col md:flex-row items-center gap-4 mb-8">
             <div className="relative flex-grow w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                 <Input
                   type="text"
                   aria-label="Search jobs"
                   placeholder="Search by title, company, or keyword..."
-                  className="w-full pl-12 pr-10 py-6 text-base rounded-lg shadow-sm focus-visible:ring-accent"
+                  className="w-full pl-12 pr-10 py-6 rounded-lg shadow-sm focus-visible:ring-accent"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
