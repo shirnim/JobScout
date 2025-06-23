@@ -65,12 +65,12 @@ const transformApiJob = (apiJob: any): Job => ({
     applyUrl: apiJob.job_apply_link,
 });
 
-export async function getJobs(query: string): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
+export async function getJobs(query: string, numPages: string = '1'): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
   if (!query) {
     return { jobs: [], source: 'mock' };
   }
   
-  const apiData = await fetchFromApi('search', { query, num_pages: '10' });
+  const apiData = await fetchFromApi('search', { query, num_pages: numPages });
   
   if (apiData === null) {
       return { jobs: MOCK_JOBS, source: 'mock' };
@@ -120,5 +120,54 @@ const MOCK_ANALYTICS: AnalyticsData = {
 };
 
 export async function getDashboardAnalytics(): Promise<AnalyticsData> {
-  return Promise.resolve(MOCK_ANALYTICS);
+  // Fetch a broad set of jobs to generate analytics from.
+  const { jobs, source } = await getJobs('developer in USA', '5');
+
+  if (source === 'mock' || !jobs || jobs.length === 0) {
+    console.warn("Could not fetch live analytics data. Falling back to mock analytics.");
+    return MOCK_ANALYTICS;
+  }
+
+  // Calculate top locations
+  const locationCounts: { [key: string]: number } = {};
+  jobs.forEach(job => {
+    const location = (job.location || 'N/A').split(',')[0].trim();
+    if (location && location !== 'N/A' && location !== 'Not specified') {
+      locationCounts[location] = (locationCounts[location] || 0) + 1;
+    }
+  });
+
+  const topLocations = Object.entries(locationCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([location, count]) => ({ location, count }));
+
+  // Calculate top roles using keyword matching
+  const roleCounts: { [key: string]: number } = {};
+  const roleKeywords = ['Data Scientist', 'Product Manager', 'Full Stack', 'Frontend', 'Backend', 'DevOps', 'Designer', 'Mobile', 'Engineer', 'Developer'];
+  
+  jobs.forEach(job => {
+    const title = (job.title || '').toLowerCase();
+    let assignedRole: string | null = null;
+    for (const keyword of roleKeywords) {
+      if (title.includes(keyword.toLowerCase())) {
+        assignedRole = keyword;
+        break;
+      }
+    }
+    if (assignedRole) {
+      roleCounts[assignedRole] = (roleCounts[assignedRole] || 0) + 1;
+    }
+  });
+
+  const topRoles = Object.entries(roleCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([role, count]) => ({ role, count }));
+
+  return {
+    totalJobs: jobs.length,
+    topLocations: topLocations.length > 0 ? topLocations : MOCK_ANALYTICS.topLocations,
+    topRoles: topRoles.length > 0 ? topRoles : MOCK_ANALYTICS.topRoles,
+  };
 }

@@ -7,5 +7,6 @@ export async function searchJobs(query: string): Promise<{ jobs: Job[], source: 
     if (!query || query.trim() === '') {
         return { jobs: [], source: 'mock' };
     }
-    return await fetchJobs(query);
+    // Fetch up to 10 pages for a user-initiated search
+    return await fetchJobs(query, '10');
 }
