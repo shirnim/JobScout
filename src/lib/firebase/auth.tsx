@@ -39,6 +39,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return () => unsubscribe();
     } else {
+      // Mock mode: restore session from localStorage
+      if (typeof window !== 'undefined') {
+        try {
+          const mockUserEmail = localStorage.getItem('mock-user-session');
+          if (mockUserEmail) {
+            const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+            const mockUser = mockUsers.find((u: any) => u && u.email === mockUserEmail);
+            if (mockUser) {
+              setUser({
+                uid: `mock-${mockUser.email}`,
+                displayName: mockUser.email.split('@')[0],
+                email: mockUser.email,
+                photoURL: `https://placehold.co/40x40.png`,
+              } as User);
+            }
+          }
+        } catch (error) {
+            console.error("Failed to parse mock user data from localStorage", error);
+        }
+      }
       setLoading(false);
     }
   }, []);
@@ -58,12 +78,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               throw new Error("Invalid email or password. Please try again.");
           }
           
-          setUser({
+          const loggedInUser = {
             uid: `mock-${trimmedEmail}`,
             displayName: trimmedEmail.split('@')[0],
             email: trimmedEmail,
             photoURL: `https://placehold.co/40x40.png`,
-          } as User);
+          } as User;
+
+          setUser(loggedInUser);
+          localStorage.setItem('mock-user-session', loggedInUser.email!);
       }
       return;
     }
@@ -83,13 +106,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         mockUsers.push({ email: trimmedEmail, password: password });
         localStorage.setItem('mock-users', JSON.stringify(mockUsers));
+        
+        const newUser = {
+            uid: `mock-${trimmedEmail}`,
+            displayName: trimmedEmail.split('@')[0],
+            email: trimmedEmail,
+            photoURL: `https://placehold.co/40x40.png`,
+        } as User;
+
+        setUser(newUser);
+        localStorage.setItem('mock-user-session', newUser.email!);
       }
-      setUser({
-        uid: `mock-${trimmedEmail}`,
-        displayName: trimmedEmail.split('@')[0],
-        email: trimmedEmail,
-        photoURL: `https://placehold.co/40x40.png`,
-      } as User);
       return;
     }
     await firebaseCreateUserWithEmailAndPassword(auth!, email, password);
@@ -98,12 +125,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     if (!useRealFirebase) {
       console.warn("Firebase not configured. Signing in with mock user.");
-      setUser({
+       const mockGoogleUser = {
         uid: 'mock-google-user-123',
         displayName: 'Google User',
         email: 'google@example.com',
         photoURL: `https://placehold.co/40x40.png`,
-      } as User);
+      } as User;
+      setUser(mockGoogleUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('mock-user-session', mockGoogleUser.email!);
+      }
       router.push('/dashboard');
       return;
     }
@@ -115,6 +146,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     if (!useRealFirebase) {
       setUser(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('mock-user-session');
+      }
       router.push('/signin');
       return;
     }
