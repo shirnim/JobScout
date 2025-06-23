@@ -66,8 +66,11 @@ export default function Home() {
             JobScout is your AI-powered co-pilot for navigating the job market. Search millions of jobs, gain data-driven insights, and get hired faster.
             </p>
             <div className="flex justify-center gap-4">
+                 <Button asChild size="lg">
+                    <Link href="/search">Start Your Search</Link>
+                </Button>
                  <Button asChild size="lg" variant="outline">
-                    <Link href="/signup">Get Started</Link>
+                    <Link href="/signup">Create an Account</Link>
                 </Button>
             </div>
         </div>
