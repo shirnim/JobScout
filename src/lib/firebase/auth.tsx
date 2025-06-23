@@ -115,12 +115,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     if (!useRealFirebase) {
       setUser(null);
-      router.push('/');
+      router.push('/signin');
       return;
     }
     try {
       await signOut(auth!);
-      router.push('/');
+      router.push('/signin');
     } catch (error) {
       console.error("Error signing out", error);
     }

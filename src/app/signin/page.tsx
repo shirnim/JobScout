@@ -33,7 +33,7 @@ const formSchema = z.object({
 });
 
 export default function SignInPage() {
-  const { user, signInWithEmailAndPassword, signInWithGoogle } = useAuth();
+  const { user, signInWithEmailAndPassword } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = React.useState(false);
@@ -62,21 +62,6 @@ export default function SignInPage() {
         description: error.message || 'An unexpected error occurred.',
         variant: 'destructive',
       });
-    } finally {
-        setIsLoading(false);
-    }
-  }
-
-  async function handleGoogleSignIn() {
-    setIsLoading(true);
-    try {
-        await signInWithGoogle();
-    } catch (error: any) {
-        toast({
-            title: 'Sign In Failed',
-            description: error.message || 'Could not sign in with Google.',
-            variant: 'destructive',
-        });
     } finally {
         setIsLoading(false);
     }
@@ -126,17 +111,6 @@ export default function SignInPage() {
               </Button>
             </form>
           </Form>
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t"></span>
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-            Sign In with Google
-          </Button>
 
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
