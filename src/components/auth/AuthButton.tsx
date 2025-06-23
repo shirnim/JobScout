@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from '@/lib/firebase/auth';
@@ -38,6 +39,7 @@ const AuthButton = () => {
   }
 
   const isMockUser = user.uid.startsWith('mock-');
+  const photoSrc = isMockUser ? `https://placehold.co/100x100.png` : user.photoURL || '';
 
   return (
     <DropdownMenu>
@@ -45,9 +47,9 @@ const AuthButton = () => {
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border">
             <AvatarImage
-              src={user.photoURL || ''}
+              src={photoSrc}
               alt={user.displayName || 'User Avatar'}
-              {...(isMockUser && { 'data-ai-hint': 'person face' })}
+              data-ai-hint="person face"
             />
             <AvatarFallback>
               <CircleUserRound className="h-full w-full text-muted-foreground" />
