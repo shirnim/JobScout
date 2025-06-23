@@ -67,7 +67,7 @@ const transformApiJob = (apiJob: any): Job => ({
     employmentType: apiJob.job_employment_type,
 });
 
-export async function getJobs(query: string, numPages: string = '1', filters: SearchFilters = {}): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
+export async function getJobs(query: string, numPages: string = '10', filters: SearchFilters = {}): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
   if (!query) {
     return { jobs: [], source: 'mock' };
   }
@@ -93,7 +93,8 @@ export async function getJobs(query: string, numPages: string = '1', filters: Se
   
   if (Array.isArray(apiData)) {
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
-      return { jobs, source: 'api' };
+      const uniqueJobs = Array.from(new Map(jobs.map(job => [job.id, job])).values());
+      return { jobs: uniqueJobs, source: 'api' };
   }
 
   console.warn('API returned unexpected data format, returning mock data.');
