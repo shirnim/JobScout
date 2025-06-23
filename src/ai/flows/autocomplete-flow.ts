@@ -34,6 +34,8 @@ The suggestions should be diverse and cover job titles, skills, and technologies
 Do not repeat the user's query in the suggestions.
 
 User query: {{{query}}}
+
+Return a JSON object with a single key "suggestions" containing an array of strings.
 `,
 });
 

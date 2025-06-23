@@ -233,21 +233,20 @@ export default function JobSearchAndListings() {
                         <X className="h-4 w-4 text-muted-foreground" />
                     </Button>
                 )}
-                {showSuggestions && (isSuggesting || suggestions.length > 0) && (
+                {showSuggestions && debouncedQuery.length >= 3 && (
                     <Card className="absolute z-50 w-full mt-2 overflow-hidden shadow-lg">
-                        {isSuggesting && (
+                        {isSuggesting ? (
                             <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
                                 <Loader2 className="h-4 w-4 animate-spin" />
                                 <span>Generating suggestions...</span>
                             </div>
-                        )}
-                        {!isSuggesting && suggestions.length > 0 && (
+                        ) : suggestions.length > 0 ? (
                             <ul className="py-2">
                                 {suggestions.map((suggestion) => (
                                     <li
                                         key={suggestion}
                                         className="px-4 py-2 cursor-pointer hover:bg-accent"
-                                        onMouseDown={(e) => { // use onMouseDown to fire before onBlur
+                                        onMouseDown={(e) => {
                                             e.preventDefault();
                                             handleSuggestionClick(suggestion);
                                         }}
@@ -256,6 +255,10 @@ export default function JobSearchAndListings() {
                                     </li>
                                 ))}
                             </ul>
+                        ) : (
+                             <div className="p-4 text-sm text-muted-foreground">
+                                No suggestions found for &quot;{debouncedQuery}&quot;.
+                            </div>
                         )}
                     </Card>
                 )}
