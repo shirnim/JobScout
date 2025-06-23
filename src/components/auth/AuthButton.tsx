@@ -10,8 +10,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuGroup,
 } from '@/components/ui/dropdown-menu';
-import { LogIn, LogOut, User as UserIcon, Loader2 } from 'lucide-react';
+import { LogIn, LogOut, User as UserIcon, Loader2, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 
 const AuthButton = () => {
@@ -19,15 +20,15 @@ const AuthButton = () => {
 
   if (loading) {
     return (
-      <Button variant="outline" size="icon" disabled>
-        <Loader2 className="h-4 w-4 animate-spin" />
+      <Button variant="ghost" size="icon" disabled className="h-10 w-10 rounded-full">
+        <Loader2 className="h-5 w-5 animate-spin" />
       </Button>
     );
   }
 
   if (!user) {
     return (
-      <Button asChild variant="outline">
+      <Button asChild>
         <Link href="/signin">
           <LogIn className="mr-2 h-4 w-4" />
           Sign In
@@ -40,7 +41,7 @@ const AuthButton = () => {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 border">
             <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User Avatar'} />
             <AvatarFallback>
               {user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />}
@@ -56,7 +57,16 @@ const AuthButton = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={logout}>
+        <DropdownMenuGroup>
+           <DropdownMenuItem asChild className="cursor-pointer">
+             <Link href="/dashboard">
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+             </Link>
+           </DropdownMenuItem>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
