@@ -4,6 +4,9 @@ export const EMPTY_ANALYTICS: AnalyticsData = {
   totalJobs: 0,
   topLocations: [],
   topRoles: [],
+  remotePercentage: 0,
+  topCompanies: [],
+  topSkills: [],
 };
 
 export function generateAnalytics(jobs: Job[]): AnalyticsData {
@@ -48,9 +51,47 @@ export function generateAnalytics(jobs: Job[]): AnalyticsData {
     .slice(0, 5)
     .map(([role, count]) => ({ role, count }));
 
+  // Calculate remote vs on-site
+  const remoteJobs = jobs.filter(job => job.location?.toLowerCase().includes('remote')).length;
+  const remotePercentage = jobs.length > 0 ? Math.round((remoteJobs / jobs.length) * 100) : 0;
+  
+  // Calculate top companies
+  const companyCounts: { [key: string]: number } = {};
+  jobs.forEach(job => {
+    if (job.company && job.company !== 'N/A') {
+      companyCounts[job.company] = (companyCounts[job.company] || 0) + 1;
+    }
+  });
+  const topCompanies = Object.entries(companyCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 5)
+    .map(([company, count]) => ({ company, count }));
+    
+  // Calculate top skills from highlights
+  const skillCounts: { [key: string]: number } = {};
+  jobs.forEach(job => {
+    if (job.highlights?.Qualifications) {
+      job.highlights.Qualifications.forEach(skill => {
+        // Basic normalization
+        const normalizedSkill = skill.split('(')[0].trim();
+        if (normalizedSkill) {
+            skillCounts[normalizedSkill] = (skillCounts[normalizedSkill] || 0) + 1;
+        }
+      });
+    }
+  });
+  const topSkills = Object.entries(skillCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10) // Show more skills as they are important
+    .map(([skill, count]) => ({ skill, count }));
+
+
   return {
     totalJobs: jobs.length,
-    topLocations: topLocations,
-    topRoles: topRoles,
+    topLocations,
+    topRoles,
+    remotePercentage,
+    topCompanies,
+    topSkills
   };
 }
