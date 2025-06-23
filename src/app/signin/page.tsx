@@ -40,7 +40,7 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace('/dashboard');
+      router.replace('/search');
     }
   }, [user, router]);
 

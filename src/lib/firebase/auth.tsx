@@ -135,12 +135,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (typeof window !== 'undefined') {
         localStorage.setItem('mock-user-session', mockGoogleUser.email!);
       }
-      router.push('/dashboard');
+      router.push('/search');
       return;
     }
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth!, provider);
-    router.push('/dashboard');
+    router.push('/search');
   };
 
   const logout = async () => {

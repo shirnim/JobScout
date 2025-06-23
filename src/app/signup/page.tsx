@@ -39,7 +39,7 @@ export default function SignUpPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace('/dashboard');
+      router.replace('/search');
     }
   }, [user, router]);
 
