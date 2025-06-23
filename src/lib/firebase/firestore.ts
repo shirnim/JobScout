@@ -1,5 +1,5 @@
 
-import type { Job, AnalyticsData } from "@/types";
+import type { Job } from "@/types";
 
 const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
 const RAPIDAPI_HOST = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
@@ -9,7 +9,7 @@ const MOCK_JOBS: Job[] = [
   { id: '2', title: 'Backend Engineer (Node.js)', company: 'DataSolutions', location: 'San Francisco, CA', datePosted: '2024-05-19T14:30:00Z', description: 'DataSolutions is seeking a Backend Engineer with expertise in Node.js to develop and maintain our server-side logic. You will work on database integrations, API development, and ensuring the scalability and security of our applications. Experience with microservices architecture and cloud platforms like AWS or GCP is highly desirable.', applyUrl: '#' },
   { id: '3', title: 'Product Manager', company: 'Innovate Inc.', location: 'Remote', datePosted: '2024-05-22T09:00:00Z', description: 'As a Product Manager at Innovate Inc., you will drive the product vision and roadmap. You will work closely with engineering, design, and marketing teams to define product requirements, prioritize features, and deliver products that delight our users. Strong communication and leadership skills are essential.', applyUrl: '#' },
   { id: '4', title: 'UX/UI Designer', company: 'CreativeMinds', location: 'Austin, TX', datePosted: '2024-05-18T11:00:00Z', description: 'CreativeMinds is looking for a talented UX/UI Designer to create intuitive and visually appealing interfaces for our web and mobile applications. You will be involved in the entire design process, from user research and wireframing to creating high-fidelity mockups and prototypes. A strong portfolio is required.', applyUrl: '#' },
-  { id: '5', title: 'DevOps Engineer', company: 'CloudNet', location: 'Seattle, WA', datePosted: '2024-05-21T16:00:00Z', description: "Join our CloudNet team as a DevOps Engineer and help us build and maintain our CI/CD pipelines and cloud infrastructure. You will be responsible for automating deployments, monitoring system health, and ensuring the reliability and scalability of our services. Experience with Docker, Kubernetes, and Terraform is a plus.", applyUrl: '#' },
+  { id: '5', title: 'DevOps Engineer', company: 'CloudNet', location: 'Seattle, WA', datePosted: '2024-05-21T16:00:00Z', description: 'Join our CloudNet team as a DevOps Engineer and help us build and maintain our CI/CD pipelines and cloud infrastructure. You will be responsible for automating deployments, monitoring system health, and ensuring the reliability and scalability of our services. Experience with Docker, Kubernetes, and Terraform is a plus.', applyUrl: '#' },
   { id: '6', title: 'Data Scientist', company: 'AlphaAnalytics', location: 'Boston, MA', datePosted: '2024-05-15T12:00:00Z', description: 'AlphaAnalytics is hiring a Data Scientist to analyze large datasets and extract actionable insights. You will develop machine learning models, create data visualizations, and work with stakeholders to solve complex business problems. Proficiency in Python, R, and SQL is required.', applyUrl: '#' },
 ];
 
@@ -27,8 +27,6 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
     const url = new URL(`https://${sanitizedHost}/${endpoint}`);
     Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
 
-    console.log(`[DEBUG] Fetching from: ${url.toString()}`);
-
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
@@ -40,8 +38,11 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
         });
 
         if (!response.ok) {
-            const text = await response.text();
-            console.error(`[ERROR] API failed (${response.status}): ${text}`);
+            const errorText = await response.text();
+            // Silently fail for job-details endpoint as it is known to be unstable.
+            if (endpoint !== 'job-details') {
+              console.error(`[ERROR] API failed (${response.status}): ${errorText}`);
+            }
             return null;
         }
 
@@ -99,75 +100,4 @@ export async function getJob(id: string): Promise<Job | null> {
   // The page component will then handle this by showing a "Not Found" page.
   // We no longer fall back to mock data here to avoid user confusion.
   return null;
-}
-
-const MOCK_ANALYTICS: AnalyticsData = {
-  totalJobs: 1256,
-  topLocations: [
-    { location: 'New York, NY', count: 250 },
-    { location: 'San Francisco, CA', count: 210 },
-    { location: 'Remote', count: 180 },
-    { location: 'Austin, TX', count: 150 },
-    { location: 'Seattle, WA', count: 120 },
-  ],
-  topRoles: [
-    { role: 'Frontend Dev', count: 180 },
-    { role: 'Backend Eng', count: 165 },
-    { role: 'Product Manager', count: 120 },
-    { role: 'Data Scientist', count: 95 },
-    { role: 'UX/UI Designer', count: 80 },
-  ],
-};
-
-export async function getDashboardAnalytics(): Promise<AnalyticsData> {
-  // Fetch a broad set of jobs to generate analytics from.
-  const { jobs, source } = await getJobs('developer in USA', '5');
-
-  if (source === 'mock' || !jobs || jobs.length === 0) {
-    console.warn("Could not fetch live analytics data. Falling back to mock analytics.");
-    return MOCK_ANALYTICS;
-  }
-
-  // Calculate top locations
-  const locationCounts: { [key: string]: number } = {};
-  jobs.forEach(job => {
-    const location = (job.location || 'N/A').split(',')[0].trim();
-    if (location && location !== 'N/A' && location !== 'Not specified') {
-      locationCounts[location] = (locationCounts[location] || 0) + 1;
-    }
-  });
-
-  const topLocations = Object.entries(locationCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([location, count]) => ({ location, count }));
-
-  // Calculate top roles using keyword matching
-  const roleCounts: { [key: string]: number } = {};
-  const roleKeywords = ['Data Scientist', 'Product Manager', 'Full Stack', 'Frontend', 'Backend', 'DevOps', 'Designer', 'Mobile', 'Engineer', 'Developer'];
-  
-  jobs.forEach(job => {
-    const title = (job.title || '').toLowerCase();
-    let assignedRole: string | null = null;
-    for (const keyword of roleKeywords) {
-      if (title.includes(keyword.toLowerCase())) {
-        assignedRole = keyword;
-        break;
-      }
-    }
-    if (assignedRole) {
-      roleCounts[assignedRole] = (roleCounts[assignedRole] || 0) + 1;
-    }
-  });
-
-  const topRoles = Object.entries(roleCounts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 5)
-    .map(([role, count]) => ({ role, count }));
-
-  return {
-    totalJobs: jobs.length,
-    topLocations: topLocations.length > 0 ? topLocations : MOCK_ANALYTICS.topLocations,
-    topRoles: topRoles.length > 0 ? topRoles : MOCK_ANALYTICS.topRoles,
-  };
 }

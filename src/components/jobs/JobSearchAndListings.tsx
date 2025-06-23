@@ -30,6 +30,9 @@ export default function JobSearchAndListings() {
     const result = await searchJobs(query);
     setJobs(result.jobs);
     setSource(result.source);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('lastSearchResults', JSON.stringify(result.jobs));
+    }
     setIsLoading(false);
   };
 
