@@ -92,6 +92,21 @@ export default async function JobPage({ params }: { params: { id: string } }) {
             <div className="text-muted-foreground whitespace-pre-line leading-relaxed">
                 {job.description}
             </div>
+
+            {job.highlights && Object.values(job.highlights).some(v => v && v.length > 0) && <Separator className="my-6" />}
+            
+            {job.highlights && Object.entries(job.highlights).map(([key, value]) => (
+                value && Array.isArray(value) && value.length > 0 && (
+                    <div key={key} className="mt-4 first:mt-0">
+                        <h3 className="text-lg font-semibold font-headline mb-3">{key}</h3>
+                        <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                            {value.map((item, index) => (
+                                <li key={index}>{item}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )
+            ))}
         </CardContent>
       </Card>
 

@@ -8,6 +8,7 @@ export type Job = {
   description: string;
   applyUrl: string;
   employmentType?: string;
+  highlights?: { [key: string]: string[] };
 };
 
 export type AnalyticsData = {

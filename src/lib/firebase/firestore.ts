@@ -65,6 +65,7 @@ const transformApiJob = (apiJob: any): Job => ({
     description: apiJob.job_description,
     applyUrl: apiJob.job_apply_link,
     employmentType: apiJob.job_employment_type,
+    highlights: apiJob.job_highlights,
 });
 
 export async function getJobs(query: string, numPages: string = '10', filters: SearchFilters = {}): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
