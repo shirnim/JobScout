@@ -16,7 +16,7 @@ const AutocompleteInputSchema = z.object({
 export type AutocompleteInput = z.infer<typeof AutocompleteInputSchema>;
 
 const AutocompleteOutputSchema = z.object({
-  suggestions: z.array(z.string()).describe('A list of 5 autocomplete suggestions for job search queries.'),
+  suggestions: z.array(z.string()).describe('A list of up to 5 autocomplete suggestions for job search queries.'),
 });
 export type AutocompleteOutput = z.infer<typeof AutocompleteOutputSchema>;
 
@@ -28,11 +28,11 @@ const prompt = ai.definePrompt({
   name: 'autocompletePrompt',
   input: {schema: AutocompleteInputSchema},
   output: {schema: AutocompleteOutputSchema},
-  prompt: `You are an autocomplete assistant for a job search engine.
-Given the user's partial query, provide 5 relevant and common job search terms.
-The suggestions should be diverse and cover job titles, skills, technologies, and locations.
-For example, if the query is "react", suggestions could be "react developer", "react jobs". If the query is "mumbai", suggestions could be "jobs in mumbai", "software engineer mumbai".
-Do not repeat the user's query in the suggestions.
+  prompt: `You are an API that provides autocomplete suggestions for a job search engine.
+Given the user's partial query, return a JSON object with a 'suggestions' key, which is an array of up to 5 relevant and common job search strings.
+Examples:
+- If the query is "react", suggestions could include "react developer" and "react native jobs".
+- If the query is "mumbai", suggestions could include "jobs in mumbai" and "software engineer mumbai".
 
 User query: {{{query}}}
 `,
