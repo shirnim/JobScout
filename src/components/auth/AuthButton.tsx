@@ -37,12 +37,18 @@ const AuthButton = () => {
     );
   }
 
+  const isMockUser = user.uid.startsWith('mock-');
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
           <Avatar className="h-10 w-10 border">
-            <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User Avatar'} />
+            <AvatarImage
+              src={user.photoURL || ''}
+              alt={user.displayName || 'User Avatar'}
+              {...(isMockUser && { 'data-ai-hint': 'person face' })}
+            />
             <AvatarFallback>
               {user.email ? user.email.charAt(0).toUpperCase() : <UserIcon />}
             </AvatarFallback>

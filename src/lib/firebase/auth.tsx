@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 uid: `mock-${mockUser.email}`,
                 displayName: mockUser.email.split('@')[0],
                 email: mockUser.email,
-                photoURL: `https://placehold.co/40x40.png`,
+                photoURL: `https://placehold.co/100x100.png`,
               } as User);
             }
           }
@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             uid: `mock-${trimmedEmail}`,
             displayName: trimmedEmail.split('@')[0],
             email: trimmedEmail,
-            photoURL: `https://placehold.co/40x40.png`,
+            photoURL: `https://placehold.co/100x100.png`,
           } as User;
 
           setUser(loggedInUser);
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             uid: `mock-${trimmedEmail}`,
             displayName: trimmedEmail.split('@')[0],
             email: trimmedEmail,
-            photoURL: `https://placehold.co/40x40.png`,
+            photoURL: `https://placehold.co/100x100.png`,
         } as User;
 
         setUser(newUser);
@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         uid: 'mock-google-user-123',
         displayName: 'Google User',
         email: 'google@example.com',
-        photoURL: `https://placehold.co/40x40.png`,
+        photoURL: `https://placehold.co/100x100.png`,
       } as User;
       setUser(mockGoogleUser);
       if (typeof window !== 'undefined') {
