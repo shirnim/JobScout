@@ -205,153 +205,62 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-        <div className="flex flex-col lg:flex-row items-center gap-4 mb-8">
-            <div className="relative flex-grow w-full">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
-                <Input
-                  type="text"
-                  aria-label="Search jobs"
-                  placeholder="Search by title, company, or keyword..."
-                  className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
-                  onFocus={() => setShowSuggestions(true)}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
-                  autoComplete="off"
-                />
-                 {query && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
-                        onClick={() => {
-                            setQuery('');
-                            setSuggestions([]);
-                        }}
-                    >
-                        <X className="h-4 w-4 text-muted-foreground" />
-                    </Button>
-                )}
-                {showSuggestions && debouncedQuery.length >= 3 && (
-                    <Card className="absolute z-50 w-full mt-2 overflow-hidden shadow-lg">
-                        {isSuggesting ? (
-                            <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                                <span>Generating suggestions...</span>
-                            </div>
-                        ) : suggestions.length > 0 ? (
-                            <ul className="py-2">
-                                {suggestions.map((suggestion) => (
-                                    <li
-                                        key={suggestion}
-                                        className="px-4 py-2 cursor-pointer hover:bg-accent"
-                                        onMouseDown={(e) => {
-                                            e.preventDefault();
-                                            handleSuggestionClick(suggestion);
-                                        }}
-                                    >
-                                        {suggestion}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                             <div className="p-4 text-sm text-muted-foreground">
-                                No suggestions found for &quot;{debouncedQuery}&quot;.
-                            </div>
-                        )}
-                    </Card>
-                )}
-            </div>
-            <Button 
-                onClick={() => handleSearch(query)} 
-                className="w-full sm:w-auto shrink-0"
-                disabled={isLoading}
-            >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4"/>}
-                Search
-            </Button>
-            <Button 
-                onClick={handleExport} 
-                variant="outline" 
-                className="w-full sm:w-auto shrink-0" 
-                disabled={jobs.length === 0 || isLoading}
-            >
-                <FileDown className="mr-2 h-4 w-4" />
-                Export
-            </Button>
-            <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="outline" className="w-full sm:w-auto shrink-0">
-                        <Filter className="mr-2 h-4 w-4" />
-                        Filters
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80" align="end">
-                    <div className="grid gap-4">
-                        <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Filters</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Refine your job search.
-                            </p>
+        <div className="relative w-full mb-8">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+            <Input
+              type="text"
+              aria-label="Search jobs"
+              placeholder="Search by title, company, or keyword and press Enter..."
+              className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base md:text-sm"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
+              onFocus={() => setShowSuggestions(true)}
+              onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
+              autoComplete="off"
+            />
+             {query && (
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                    onClick={() => {
+                        setQuery('');
+                        setSuggestions([]);
+                    }}
+                >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                </Button>
+            )}
+            {showSuggestions && debouncedQuery.length >= 3 && (
+                <Card className="absolute z-50 w-full mt-2 overflow-hidden shadow-lg">
+                    {isSuggesting ? (
+                        <div className="p-4 text-sm text-muted-foreground flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>Generating suggestions...</span>
                         </div>
-                        <div className="grid gap-4">
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label htmlFor="location">Location</Label>
-                                <Input
-                                    id="location"
-                                    value={locationFilter}
-                                    onChange={(e) => setLocationFilter(e.target.value)}
-                                    className="col-span-2 h-10"
-                                    placeholder="e.g. New York"
-                                />
-                            </div>
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label>Job Type</Label>
-                                <Select value={employmentType} onValueChange={setEmploymentType}>
-                                    <SelectTrigger className="col-span-2 h-10">
-                                        <SelectValue placeholder="Job Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Types</SelectItem>
-                                        <SelectItem value="FULLTIME">Full-time</SelectItem>
-                                        <SelectItem value="PARTTIME">Part-time</SelectItem>
-                                        <SelectItem value="CONTRACTOR">Contract</SelectItem>
-                                        <SelectItem value="INTERN">Internship</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-3 items-center gap-4">
-                                <Label>Date Posted</Label>
-                                <Select value={datePosted} onValueChange={setDatePosted}>
-                                    <SelectTrigger className="col-span-2 h-10">
-                                        <SelectValue placeholder="Date Posted" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Any time</SelectItem>
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="3days">Last 3 days</SelectItem>
-                                        <SelectItem value="week">Last week</SelectItem>
-                                        <SelectItem value="month">Last month</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex items-center space-x-2 pt-2 pl-1">
-                                <Checkbox id="remote-only-popover" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
-                                <label
-                                    htmlFor="remote-only-popover"
-                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    ) : suggestions.length > 0 ? (
+                        <ul className="py-2">
+                            {suggestions.map((suggestion) => (
+                                <li
+                                    key={suggestion}
+                                    className="px-4 py-2 cursor-pointer hover:bg-accent"
+                                    onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleSuggestionClick(suggestion);
+                                    }}
                                 >
-                                    Remote only
-                                </label>
-                            </div>
+                                    {suggestion}
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                         <div className="p-4 text-sm text-muted-foreground">
+                            No suggestions found for &quot;{debouncedQuery}&quot;.
                         </div>
-                         <Button onClick={handleApplyFilters} disabled={isLoading || masterJobList.length === 0} className="w-full">
-                            Apply Filters
-                        </Button>
-                    </div>
-                </PopoverContent>
-            </Popover>
+                    )}
+                </Card>
+            )}
         </div>
 
         {source === 'mock' && hasSearched && !isLoading && (
@@ -372,6 +281,92 @@ export default function JobSearchAndListings() {
       
         {!isLoading && hasSearched && (
             <>
+            {jobs.length > 0 && (
+                <div className="flex justify-end items-center gap-2 mb-6">
+                    <Button 
+                        onClick={handleExport} 
+                        variant="outline"
+                        size="sm"
+                        className="shrink-0"
+                    >
+                        <FileDown className="mr-2 h-4 w-4" />
+                        Export
+                    </Button>
+                    <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="shrink-0">
+                                <Filter className="mr-2 h-4 w-4" />
+                                Filters
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80" align="end">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Filters</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Refine your job search.
+                                    </p>
+                                </div>
+                                <div className="grid gap-4">
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label htmlFor="location">Location</Label>
+                                        <Input
+                                            id="location"
+                                            value={locationFilter}
+                                            onChange={(e) => setLocationFilter(e.target.value)}
+                                            className="col-span-2 h-10"
+                                            placeholder="e.g. New York"
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label>Job Type</Label>
+                                        <Select value={employmentType} onValueChange={setEmploymentType}>
+                                            <SelectTrigger className="col-span-2 h-10">
+                                                <SelectValue placeholder="Job Type" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Types</SelectItem>
+                                                <SelectItem value="FULLTIME">Full-time</SelectItem>
+                                                <SelectItem value="PARTTIME">Part-time</SelectItem>
+                                                <SelectItem value="CONTRACTOR">Contract</SelectItem>
+                                                <SelectItem value="INTERN">Internship</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label>Date Posted</Label>
+                                        <Select value={datePosted} onValueChange={setDatePosted}>
+                                            <SelectTrigger className="col-span-2 h-10">
+                                                <SelectValue placeholder="Date Posted" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">Any time</SelectItem>
+                                                <SelectItem value="today">Today</SelectItem>
+                                                <SelectItem value="3days">Last 3 days</SelectItem>
+                                                <SelectItem value="week">Last week</SelectItem>
+                                                <SelectItem value="month">Last month</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="flex items-center space-x-2 pt-2 pl-1">
+                                        <Checkbox id="remote-only-popover" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
+                                        <label
+                                            htmlFor="remote-only-popover"
+                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                        >
+                                            Remote only
+                                        </label>
+                                    </div>
+                                </div>
+                                 <Button onClick={handleApplyFilters} disabled={isLoading || masterJobList.length === 0} className="w-full">
+                                    Apply Filters
+                                </Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </div>
+            )}
+            
             <JobList jobs={paginatedJobs} />
             
             {totalPages > 1 && (
