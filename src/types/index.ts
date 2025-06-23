@@ -14,3 +14,9 @@ export type AnalyticsData = {
   topLocations: { location: string; count: number }[];
   topRoles: { role: string; count: number }[];
 };
+
+export interface SearchFilters {
+  employmentType?: string;
+  datePosted?: string;
+  remoteOnly?: boolean;
+}

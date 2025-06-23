@@ -9,6 +9,14 @@ import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal } from '
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const JOBS_PER_PAGE = 5;
 
@@ -19,6 +27,9 @@ export default function JobSearchAndListings() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [employmentType, setEmploymentType] = useState('');
+  const [datePosted, setDatePosted] = useState('');
+  const [remoteOnly, setRemoteOnly] = useState(false);
 
   const handleSearch = async () => {
     if (!query.trim()) return;
@@ -27,7 +38,11 @@ export default function JobSearchAndListings() {
     setHasSearched(true);
     setCurrentPage(1);
 
-    const result = await searchJobs(query);
+    const result = await searchJobs(query, {
+      employmentType,
+      datePosted,
+      remoteOnly
+    });
     setJobs(result.jobs);
     setSource(result.source);
     if (typeof window !== 'undefined') {
@@ -98,13 +113,13 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
             <div className="relative flex-grow w-full">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
                 type="text"
                 aria-label="Search jobs"
-                placeholder="Search by title, company, or location..."
+                placeholder="Search by title, company, or keyword..."
                 className="w-full pl-12 pr-4 py-6 text-base rounded-lg shadow-sm focus-visible:ring-accent"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -130,45 +145,81 @@ export default function JobSearchAndListings() {
                 <FileDown className="mr-2 h-4 w-4" />
                 Export
             </Button>
-      </div>
-
-      {source === 'mock' && hasSearched && !isLoading && (
-        <Alert variant="destructive" className="mb-8">
-          <Terminal className="h-4 w-4" />
-          <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
-          <AlertDescription>
-            Could not connect to the live jobs API. The application is currently displaying sample data. To connect to the live API, please ensure your `NEXT_PUBLIC_RAPIDAPI_KEY` is set correctly in the `.env` file and restart the server.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {isLoading && (
-        <div className="flex justify-center items-center py-20">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
         </div>
-      )}
-      
-      {!isLoading && hasSearched && (
-        <>
-          <JobList jobs={paginatedJobs} />
-          
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center space-x-4 mt-8">
-              <Button onClick={handlePrevPage} disabled={currentPage === 1} variant="outline">
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-              <span className="text-sm font-medium text-muted-foreground">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button onClick={handleNextPage} disabled={currentPage >= totalPages} variant="outline">
-                Next
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+            <Select value={employmentType} onValueChange={setEmploymentType}>
+                <SelectTrigger className="w-full sm:w-auto sm:w-48">
+                    <SelectValue placeholder="Job Type" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">All Types</SelectItem>
+                    <SelectItem value="FULLTIME">Full-time</SelectItem>
+                    <SelectItem value="PARTTIME">Part-time</SelectItem>
+                    <SelectItem value="CONTRACTOR">Contract</SelectItem>
+                    <SelectItem value="INTERN">Internship</SelectItem>
+                </SelectContent>
+            </Select>
+            <Select value={datePosted} onValueChange={setDatePosted}>
+                <SelectTrigger className="w-full sm:w-auto sm:w-48">
+                    <SelectValue placeholder="Date Posted" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">Any time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="3days">Last 3 days</SelectItem>
+                    <SelectItem value="week">Last week</SelectItem>
+                    <SelectItem value="month">Last month</SelectItem>
+                </SelectContent>
+            </Select>
+            <div className="flex items-center space-x-2 self-start sm:self-center pt-2 sm:pt-0">
+                <Checkbox id="remote-only" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
+                <label
+                    htmlFor="remote-only"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                    Remote only
+                </label>
             </div>
-          )}
-        </>
-      )}
+        </div>
+
+        {source === 'mock' && hasSearched && !isLoading && (
+            <Alert variant="destructive" className="mb-8">
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
+            <AlertDescription>
+                Could not connect to the live jobs API. The application is currently displaying sample data. To connect to the live API, please ensure your `NEXT_PUBLIC_RAPIDAPI_KEY` is set correctly in the `.env` file and restart the server.
+            </AlertDescription>
+            </Alert>
+        )}
+
+        {isLoading && (
+            <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        )}
+      
+        {!isLoading && hasSearched && (
+            <>
+            <JobList jobs={paginatedJobs} />
+            
+            {totalPages > 1 && (
+                <div className="flex items-center justify-center space-x-4 mt-8">
+                <Button onClick={handlePrevPage} disabled={currentPage === 1} variant="outline">
+                    <ChevronLeft className="mr-2 h-4 w-4" />
+                    Previous
+                </Button>
+                <span className="text-sm font-medium text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                </span>
+                <Button onClick={handleNextPage} disabled={currentPage >= totalPages} variant="outline">
+                    Next
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                </Button>
+                </div>
+            )}
+            </>
+        )}
     </div>
   );
 }

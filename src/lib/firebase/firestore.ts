@@ -1,5 +1,5 @@
 
-import type { Job } from "@/types";
+import type { Job, SearchFilters } from "@/types";
 
 const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
 const RAPIDAPI_HOST = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
@@ -66,12 +66,23 @@ const transformApiJob = (apiJob: any): Job => ({
     applyUrl: apiJob.job_apply_link,
 });
 
-export async function getJobs(query: string, numPages: string = '1'): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
+export async function getJobs(query: string, numPages: string = '1', filters: SearchFilters = {}): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
   if (!query) {
     return { jobs: [], source: 'mock' };
   }
   
-  const apiData = await fetchFromApi('search', { query, num_pages: numPages });
+  const apiParams: Record<string, string> = { query, num_pages: numPages };
+    if (filters.employmentType) {
+        apiParams.employment_types = filters.employmentType;
+    }
+    if (filters.datePosted) {
+        apiParams.date_posted = filters.datePosted;
+    }
+    if (filters.remoteOnly) {
+        apiParams.remote_jobs_only = 'true';
+    }
+
+  const apiData = await fetchFromApi('search', apiParams);
   
   if (apiData === null) {
       return { jobs: MOCK_JOBS, source: 'mock' };
