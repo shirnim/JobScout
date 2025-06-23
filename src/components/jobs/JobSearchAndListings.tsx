@@ -22,6 +22,7 @@ import { Label } from '@/components/ui/label';
 import { getAutocompleteSuggestions } from '@/ai/flows/autocomplete-flow';
 import { useDebounce } from '@/hooks/use-debounce';
 import { Card } from '@/components/ui/card';
+import JobDetailsModal from './JobDetailsModal';
 
 const JOBS_PER_PAGE = 5;
 
@@ -38,6 +39,8 @@ export default function JobSearchAndListings() {
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [locationFilter, setLocationFilter] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -367,7 +370,7 @@ export default function JobSearchAndListings() {
                 </div>
             )}
             
-            <JobList jobs={paginatedJobs} />
+            <JobList jobs={paginatedJobs} onViewDetails={setSelectedJob} />
             
             {totalPages > 1 && (
                 <div className="flex items-center justify-center space-x-4 mt-8">
@@ -386,6 +389,15 @@ export default function JobSearchAndListings() {
             )}
             </>
         )}
+
+        <JobDetailsModal 
+            job={selectedJob} 
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    setSelectedJob(null);
+                }
+            }}
+        />
     </div>
   );
 }

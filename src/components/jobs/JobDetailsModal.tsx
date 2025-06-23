@@ -1,0 +1,227 @@
+
+'use client';
+
+import React, { useEffect, useState } from 'react';
+import type { Job } from '@/types';
+import { getJob } from '@/lib/firebase/firestore';
+import { enrichJobPost, EnrichJobPostInput } from '@/ai/flows/ai-job-post-enricher';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { MapPin, Building, Calendar, DollarSign, Star, Zap, Briefcase } from 'lucide-react';
+import { format } from 'date-fns';
+import Link from 'next/link';
+import { ScrollArea } from '../ui/scroll-area';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+function AIEnhancementCard({ job }: { job: EnrichJobPostInput }) {
+    const [enrichedData, setEnrichedData] = useState<{ suggestedSalaryRange: string; suggestedCompanyRating: string; additionalPerks: string; } | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        setIsLoading(true);
+        setError(null);
+        enrichJobPost(job)
+            .then(data => {
+                setEnrichedData(data);
+            })
+            .catch(e => {
+                console.error("AI enrichment failed", e);
+                setError("Failed to load AI insights.");
+            })
+            .finally(() => {
+                setIsLoading(false);
+            });
+    }, [job]);
+
+    if (isLoading) {
+        return (
+             <Card className="bg-primary/5 border-primary/20 mt-8">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-primary">
+                        <Zap className="h-6 w-6" />
+                         <Skeleton className="h-7 w-56" />
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </CardContent>
+            </Card>
+        );
+    }
+    
+    if (error || !enrichedData) {
+        return null; // Don't show the card if it fails
+    }
+
+    return (
+        <Card className="bg-primary/5 border-primary/20 mt-6">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-primary text-lg">
+                    <Zap className="h-5 w-5" />
+                    <span>AI-Powered Insights</span>
+                </CardTitle>
+                 <p className="text-sm text-muted-foreground pt-1">
+                    Suggestions by AI based on job details. Please verify independently.
+                </p>
+            </CardHeader>
+            <CardContent className="space-y-4 text-sm">
+                 <div className="flex items-start gap-4">
+                    <DollarSign className="h-5 w-5 mt-1 text-primary/80 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Suggested Salary Range</h4>
+                        <p className="text-muted-foreground">{enrichedData.suggestedSalaryRange}</p>
+                    </div>
+                </div>
+                 <div className="flex items-start gap-4">
+                    <Star className="h-5 w-5 mt-1 text-primary/80 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Suggested Company Rating</h4>
+                        <p className="text-muted-foreground">{enrichedData.suggestedCompanyRating}</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-4">
+                    <Zap className="h-5 w-5 mt-1 text-primary/80 shrink-0" />
+                    <div>
+                        <h4 className="font-semibold">Potential Perks</h4>
+                        <p className="text-muted-foreground">{enrichedData.additionalPerks}</p>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+interface JobDetailsModalProps {
+  job: Job | null;
+  onOpenChange: (open: boolean) => void;
+}
+
+export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDetailsModalProps) {
+  const [detailedJob, setDetailedJob] = useState<Job | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialJob) {
+      setIsLoading(true);
+      setError(null);
+      setDetailedJob(null);
+      
+      getJob(initialJob.id)
+        .then(jobData => {
+          if (jobData) {
+            setDetailedJob(jobData);
+          } else {
+            setError('Job details could not be found.');
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching job details:", err);
+          setError('An error occurred while fetching job details.');
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [initialJob]);
+
+  const jobToDisplay = detailedJob || initialJob;
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setDetailedJob(null);
+      setError(null);
+    }
+    onOpenChange(open);
+  };
+  
+  return (
+    <Dialog open={!!initialJob} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-3xl p-0">
+        <ScrollArea className="max-h-[90vh]">
+            <div className="p-6">
+                {isLoading && (
+                    <div className="space-y-4">
+                        <Skeleton className="h-8 w-3/4" />
+                        <Skeleton className="h-5 w-1/2" />
+                        <Separator className="my-4"/>
+                        <Skeleton className="h-6 w-1/4 mb-4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </div>
+                )}
+                
+                {error && !isLoading && (
+                    <div className="text-center py-12">
+                        <Briefcase className="mx-auto h-12 w-12 text-destructive" />
+                        <h2 className="mt-4 text-xl font-semibold">Error</h2>
+                        <p className="text-muted-foreground mt-2">{error}</p>
+                    </div>
+                )}
+
+                {jobToDisplay && !isLoading && !error && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline">{jobToDisplay.title}</DialogTitle>
+                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground text-sm">
+                                <span className="flex items-center gap-2"><Building className="h-4 w-4" />{jobToDisplay.company}</span>
+                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{jobToDisplay.location}</span>
+                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />Posted {format(new Date(jobToDisplay.datePosted), 'MMMM d, yyyy')}</span>
+                            </div>
+                        </DialogHeader>
+                        <Separator className="my-6"/>
+                        
+                        <h2 className="text-xl font-semibold mb-4 font-headline">Job Description</h2>
+                        <div className="text-muted-foreground whitespace-pre-line leading-relaxed prose prose-sm max-w-none">
+                            {jobToDisplay.description}
+                        </div>
+
+                        {jobToDisplay.highlights && Object.values(jobToDisplay.highlights).some(v => v && v.length > 0) && <Separator className="my-6" />}
+            
+                        {jobToDisplay.highlights && Object.entries(jobToDisplay.highlights).map(([key, value]) => (
+                            value && Array.isArray(value) && value.length > 0 && (
+                                <div key={key} className="mt-4 first:mt-0">
+                                    <h3 className="text-lg font-semibold font-headline mb-3">{key}</h3>
+                                    <ul className="list-disc list-inside text-muted-foreground space-y-2">
+                                        {value.map((item, index) => (
+                                            <li key={index}>{item}</li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )
+                        ))}
+                        
+                        <AIEnhancementCard job={{
+                            jobTitle: jobToDisplay.title,
+                            companyName: jobToDisplay.company,
+                            location: jobToDisplay.location,
+                            description: jobToDisplay.description
+                        }} />
+                    </>
+                )}
+            </div>
+        </ScrollArea>
+        {jobToDisplay && !isLoading && !error && (
+            <DialogFooter className="p-6 pt-4 bg-background border-t sticky bottom-0">
+                <Button variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
+                <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">
+                    <Link href={jobToDisplay.applyUrl} target="_blank" rel="noopener noreferrer">Apply Now</Link>
+                </Button>
+            </DialogFooter>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

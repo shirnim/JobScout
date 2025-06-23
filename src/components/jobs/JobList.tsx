@@ -3,9 +3,10 @@ import JobCard from './JobCard';
 
 interface JobListProps {
   jobs: Job[];
+  onViewDetails: (job: Job) => void;
 }
 
-export default function JobList({ jobs }: JobListProps) {
+export default function JobList({ jobs, onViewDetails }: JobListProps) {
   if (jobs.length === 0) {
     return (
       <div className="text-center py-12">
@@ -18,7 +19,7 @@ export default function JobList({ jobs }: JobListProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {jobs.map(job => (
-        <JobCard key={job.id} job={job} />
+        <JobCard key={job.id} job={job} onViewDetails={onViewDetails} />
       ))}
     </div>
   );

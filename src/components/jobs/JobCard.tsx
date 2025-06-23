@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import type { Job } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface JobCardProps {
   job: Job;
+  onViewDetails: (job: Job) => void;
 }
 
-export default function JobCard({ job }: JobCardProps) {
+export default function JobCard({ job, onViewDetails }: JobCardProps) {
   const postedDate = new Date(job.datePosted);
   const timeAgo = formatDistanceToNow(postedDate, { addSuffix: true });
 
@@ -40,8 +40,8 @@ export default function JobCard({ job }: JobCardProps) {
         </div>
       </CardContent>
       <CardFooter>
-        <Button asChild className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
-          <Link href={`/job/${encodeURIComponent(job.id)}`}>View Details</Link>
+        <Button onClick={() => onViewDetails(job)} className="w-full bg-primary hover:bg-primary/90 text-primary-foreground">
+          View Details
         </Button>
       </CardFooter>
     </Card>
