@@ -7,6 +7,7 @@ export type Job = {
   datePosted: string;
   description: string;
   applyUrl: string;
+  employmentType?: string;
 };
 
 export type AnalyticsData = {

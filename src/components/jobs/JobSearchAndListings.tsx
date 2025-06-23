@@ -24,6 +24,7 @@ const JOBS_PER_PAGE = 5;
 
 export default function JobSearchAndListings() {
   const [query, setQuery] = useState('');
+  const [masterJobList, setMasterJobList] = useState<Job[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [source, setSource] = useState<'api' | 'mock' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,6 +49,7 @@ export default function JobSearchAndListings() {
       remoteOnly,
       location: locationFilter
     });
+    setMasterJobList(result.jobs);
     setJobs(result.jobs);
     setSource(result.source);
     if (typeof window !== 'undefined') {
@@ -57,8 +59,47 @@ export default function JobSearchAndListings() {
   };
 
   const handleApplyFilters = () => {
-    // `handleSearch` already checks for a valid query
-    handleSearch();
+    let filtered = [...masterJobList];
+
+    // Location
+    if (locationFilter) {
+      filtered = filtered.filter(job => 
+        job.location?.toLowerCase().includes(locationFilter.toLowerCase())
+      );
+    }
+
+    // Remote only
+    if (remoteOnly) {
+      filtered = filtered.filter(job => 
+        job.location?.toLowerCase().includes('remote')
+      );
+    }
+
+    // Employment type
+    if (employmentType && employmentType !== 'all') {
+      filtered = filtered.filter(job => job.employmentType === employmentType);
+    }
+
+    // Date posted
+    if (datePosted && datePosted !== 'all') {
+      const now = new Date();
+      filtered = filtered.filter(job => {
+        if (!job.datePosted) return false;
+        const jobDate = new Date(job.datePosted);
+        const diffDays = (now.getTime() - jobDate.getTime()) / (1000 * 3600 * 24);
+        
+        switch (datePosted) {
+          case 'today': return diffDays <= 1;
+          case '3days': return diffDays <= 3;
+          case 'week': return diffDays <= 7;
+          case 'month': return diffDays <= 30;
+          default: return true;
+        }
+      });
+    }
+
+    setJobs(filtered);
+    setCurrentPage(1);
     setIsFilterOpen(false);
   };
 
@@ -222,7 +263,7 @@ export default function JobSearchAndListings() {
                                 </label>
                             </div>
                         </div>
-                         <Button onClick={handleApplyFilters} disabled={isLoading || !query.trim()} className="w-full">
+                         <Button onClick={handleApplyFilters} disabled={isLoading || masterJobList.length === 0} className="w-full">
                             Apply Filters
                         </Button>
                     </div>
