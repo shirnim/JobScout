@@ -9,9 +9,10 @@ import {
   GoogleAuthProvider, 
   signOut,
   signInWithEmailAndPassword as firebaseSignInWithEmailAndPassword,
-  createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword
+  createUserWithEmailAndPassword as firebaseCreateUserWithEmailAndPassword,
+  type Auth
 } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from './config';
+import { getFirebaseAuth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -61,7 +62,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const router = useRouter();
 
   useEffect(() => {
-    // This effect should only run on the client.
     if (typeof window === 'undefined') {
       return;
     }
@@ -71,7 +71,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth!, (user) => {
+    const auth = getFirebaseAuth();
+    if (!auth) {
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -79,26 +85,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsubscribe();
   }, []);
 
-  const signInWithEmailAndPassword = async (email: string, password: string) => {
-    if (!isFirebaseConfigured) {
+  const getAuthInstance = (): Auth => {
+    const auth = getFirebaseAuth();
+    if (!isFirebaseConfigured || !auth) {
         throw new Error("Firebase is not configured. Please set up your credentials.");
     }
-    await firebaseSignInWithEmailAndPassword(auth!, email, password);
+    return auth;
+  }
+
+  const signInWithEmailAndPassword = async (email: string, password: string) => {
+    const auth = getAuthInstance();
+    await firebaseSignInWithEmailAndPassword(auth, email, password);
   };
   
   const createUserWithEmailAndPassword = async (email: string, password: string) => {
-     if (!isFirebaseConfigured) {
-        throw new Error("Firebase is not configured. Please set up your credentials.");
-    }
-    await firebaseCreateUserWithEmailAndPassword(auth!, email, password);
+    const auth = getAuthInstance();
+    await firebaseCreateUserWithEmailAndPassword(auth, email, password);
   };
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured) {
-        throw new Error("Firebase is not configured. Please set up your credentials.");
-    }
+    const auth = getAuthInstance();
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth!, provider);
+    await signInWithPopup(auth, provider);
     router.push('/search');
   };
 
@@ -109,24 +117,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
     try {
-      await signOut(auth!);
+      const auth = getAuthInstance();
+      await signOut(auth);
       router.push('/signin');
     } catch (error) {
       console.error("Error signing out", error);
     }
   };
 
-  // While loading, show a full-screen spinner to prevent children from rendering prematurely
   if (loading) {
     return <FullScreenLoader />;
   }
 
-  // After loading, if Firebase is not configured, show the configuration screen
   if (!isFirebaseConfigured) {
     return <ConfigurationRequiredScreen />;
   }
 
-  // Once loaded and configured, provide the auth context to the app
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmailAndPassword, createUserWithEmailAndPassword, logout, isFirebaseConfigured }}>
       {children}

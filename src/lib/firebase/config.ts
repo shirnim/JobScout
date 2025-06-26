@@ -13,8 +13,8 @@ const firebaseConfig = {
 };
 
 let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+let authInstance: Auth | null = null;
+let dbInstance: Firestore | null = null;
 let isFirebaseConfigured = false;
 
 // Check that config values are not placeholders and are present
@@ -25,8 +25,6 @@ if (
 ) {
     try {
         app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-        auth = getAuth(app);
-        db = getFirestore(app);
         isFirebaseConfigured = true;
         console.log("Firebase initialized successfully.");
     } catch (error) {
@@ -34,10 +32,7 @@ if (
             "Firebase initialization failed! Please check your credentials in .env.",
             error
         );
-        // Force back to null if anything goes wrong.
         app = null;
-        auth = null;
-        db = null;
         isFirebaseConfigured = false;
     }
 } else {
@@ -46,5 +41,26 @@ if (
     );
 }
 
+// Lazy-load and cache the auth and firestore instances
+const getFirebaseAuth = (): Auth | null => {
+    if (!isFirebaseConfigured || !app) {
+        return null;
+    }
+    if (!authInstance) {
+        authInstance = getAuth(app);
+    }
+    return authInstance;
+};
 
-export { app, auth, db, isFirebaseConfigured };
+const getFirebaseDb = (): Firestore | null => {
+    if (!isFirebaseConfigured || !app) {
+        return null;
+    }
+    if (!dbInstance) {
+        dbInstance = getFirestore(app);
+    }
+    return dbInstance;
+};
+
+
+export { app, getFirebaseAuth, getFirebaseDb, isFirebaseConfigured };
