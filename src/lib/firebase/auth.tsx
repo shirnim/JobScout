@@ -71,11 +71,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const trimmedEmail = email.trim();
 
       if (typeof window !== 'undefined') {
-          const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-          // Find a user, ensuring the stored entry is valid and trimming the stored email for comparison.
+        try {
+          let mockUsers: any[] = [];
+          try {
+            mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+            if (!Array.isArray(mockUsers)) mockUsers = [];
+          } catch (e) {
+            // If parsing fails, there are no users to sign in with, so we throw.
+            throw new Error("Invalid email or password. Please try again.");
+          }
+
           const mockUser = mockUsers.find((u: any) => u && u.email && u.email.trim() === trimmedEmail);
 
-          // Check if user exists, has a password, and the password matches.
           if (!mockUser || !mockUser.password || mockUser.password !== password) {
               throw new Error("Invalid email or password. Please try again.");
           }
@@ -91,6 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           setUser(loggedInUser);
           localStorage.setItem('mock-user-session', loggedInUser.email!);
+        } catch (error: any) {
+            console.error("Failed to process mock user sign-in:", error);
+            throw error; // Re-throw to be displayed in the toast
+        }
       }
       return;
     }
@@ -103,26 +114,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const trimmedEmail = email.trim();
 
       if (typeof window !== 'undefined') {
-        const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-        // Check if a valid user entry with the same email already exists.
-        if (mockUsers.some((u: any) => u && u.email && u.email.trim() === trimmedEmail)) {
-            throw new Error("An account with this email already exists.");
-        }
-        
-        const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
-        mockUsers.push({ email: trimmedEmail, password: password, color: randomColor });
-        localStorage.setItem('mock-users', JSON.stringify(mockUsers));
-        
-        const displayName = trimmedEmail.split('@')[0];
-        const newUser = {
-            uid: `mock-${trimmedEmail}`,
-            displayName: displayName,
-            email: trimmedEmail,
-            photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${randomColor}&color=fff&size=100`,
-        } as User;
+        try {
+            let mockUsers: any[] = [];
+            try {
+                // Safely get and parse users, default to empty array on corruption
+                mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
+                if (!Array.isArray(mockUsers)) mockUsers = [];
+            } catch (e) {
+                console.warn('Could not parse mock users from localStorage. Starting fresh.');
+                mockUsers = [];
+            }
+            
+            if (mockUsers.some((u: any) => u && u.email && u.email.trim() === trimmedEmail)) {
+                throw new Error("An account with this email already exists.");
+            }
+            
+            const randomColor = Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            mockUsers.push({ email: trimmedEmail, password: password, color: randomColor });
+            localStorage.setItem('mock-users', JSON.stringify(mockUsers));
+            
+            const displayName = trimmedEmail.split('@')[0];
+            const newUser = {
+                uid: `mock-${trimmedEmail}`,
+                displayName: displayName,
+                email: trimmedEmail,
+                photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${randomColor}&color=fff&size=100`,
+            } as User;
 
-        setUser(newUser);
-        localStorage.setItem('mock-user-session', newUser.email!);
+            setUser(newUser);
+            localStorage.setItem('mock-user-session', newUser.email!);
+        } catch (error: any) {
+            console.error("Failed to process mock user sign-up:", error);
+            throw error; // Re-throw the original error to be displayed in the toast
+        }
       }
       return;
     }
