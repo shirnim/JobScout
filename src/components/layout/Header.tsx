@@ -21,13 +21,13 @@ const Header = () => {
             <Button asChild variant={pathname === '/search' ? 'secondary' : 'ghost'}>
               <Link href="/search">
                 <Search className="h-4 w-4" />
-                Search
+                <span className="hidden sm:inline ml-2">Search</span>
               </Link>
             </Button>
             <Button asChild variant={pathname === '/dashboard' ? 'secondary' : 'ghost'}>
               <Link href="/dashboard">
                 <LayoutDashboard className="h-4 w-4" />
-                Dashboard
+                <span className="hidden sm:inline ml-2">Dashboard</span>
               </Link>
             </Button>
             <AuthButton />
