@@ -15,6 +15,7 @@ import { auth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Loader2 } from 'lucide-react';
 
 interface AuthContextType {
   user: User | null;
@@ -39,12 +40,7 @@ const ConfigurationRequiredScreen = () => (
                 <Alert variant="destructive">
                     <AlertTitle>Action Needed</AlertTitle>
                     <AlertDescription>
-                        The application requires API keys to function.
-                        <ul className="list-disc list-inside text-left mt-2 space-y-1">
-                            <li><strong>Firebase:</strong> For user authentication.</li>
-                            <li><strong>RapidAPI:</strong> For fetching job listings.</li>
-                        </ul>
-                        <p className="mt-3">Please add your credentials to the <strong>.env</strong> file and restart the server.</p>
+                        The application requires Firebase API keys to function. Please add your project credentials to the <strong>.env</strong> file and restart the development server.
                     </AlertDescription>
                 </Alert>
             </CardContent>
@@ -52,26 +48,34 @@ const ConfigurationRequiredScreen = () => (
     </div>
 );
 
+const FullScreenLoader = () => (
+  <div className="flex h-screen w-screen items-center justify-center bg-background">
+    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+  </div>
+);
+
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (!isFirebaseConfigured) {
-        setLoading(false);
-        return;
+    // This effect should only run on the client.
+    if (typeof window === 'undefined') {
+      return;
     }
+
+    if (!isFirebaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth!, (user) => {
       setUser(user);
       setLoading(false);
     });
+    
     return () => unsubscribe();
   }, []);
 
@@ -112,10 +116,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  if (isClient && !isFirebaseConfigured) {
+  // While loading, show a full-screen spinner to prevent children from rendering prematurely
+  if (loading) {
+    return <FullScreenLoader />;
+  }
+
+  // After loading, if Firebase is not configured, show the configuration screen
+  if (!isFirebaseConfigured) {
     return <ConfigurationRequiredScreen />;
   }
 
+  // Once loaded and configured, provide the auth context to the app
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmailAndPassword, createUserWithEmailAndPassword, logout, isFirebaseConfigured }}>
       {children}
