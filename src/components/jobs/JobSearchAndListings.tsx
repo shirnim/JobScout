@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Search, FileDown, Loader2, Filter, X } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   Select,
   SelectContent,
@@ -26,7 +25,6 @@ import JobDetailsModal from './JobDetailsModal';
 import JobListSkeleton from './JobListSkeleton';
 import AdBanner from '@/components/ads/AdBanner';
 import Pagination from './Pagination';
-import { useAuth } from '@/lib/firebase/auth';
 
 const JOBS_PER_PAGE = 9;
 
@@ -45,9 +43,6 @@ export default function JobSearchAndListings() {
 
   const [searchCountry, setSearchCountry] = useState('worldwide');
   const [countryFilter, setCountryFilter] = useState('all');
-
-  const { isFirebaseConfigured } = useAuth();
-
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -212,26 +207,6 @@ export default function JobSearchAndListings() {
   const handleSuggestionClick = (suggestion: string) => {
     handleSearch(suggestion);
   };
-
-  if (!isFirebaseConfigured && process.env.NODE_ENV !== 'test') {
-    return (
-        <div className="flex items-center justify-center pt-16">
-            <Card className="max-w-lg mx-auto text-center">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Configuration Required</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Alert variant="destructive">
-                        <AlertTitle>Action Needed</AlertTitle>
-                        <AlertDescription>
-                            This application requires Firebase and RapidAPI credentials to function. Please add your keys to the <strong>.env</strong> file and restart the server.
-                        </AlertDescription>
-                    </Alert>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
 
   return (
     <div>

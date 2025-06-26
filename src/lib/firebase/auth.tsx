@@ -13,6 +13,8 @@ import {
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from './config';
 import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface AuthContextType {
   user: User | null;
@@ -26,10 +28,40 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+
+const ConfigurationRequiredScreen = () => (
+    <div className="flex h-screen items-center justify-center bg-background p-4">
+        <Card className="max-w-xl mx-auto text-center">
+            <CardHeader>
+                <CardTitle className="text-2xl">Configuration Required</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <Alert variant="destructive">
+                    <AlertTitle>Action Needed</AlertTitle>
+                    <AlertDescription>
+                        The application requires API keys to function.
+                        <ul className="list-disc list-inside text-left mt-2 space-y-1">
+                            <li><strong>Firebase:</strong> For user authentication.</li>
+                            <li><strong>RapidAPI:</strong> For fetching job listings.</li>
+                        </ul>
+                        <p className="mt-3">Please add your credentials to the <strong>.env</strong> file and restart the server.</p>
+                    </AlertDescription>
+                </Alert>
+            </CardContent>
+        </Card>
+    </div>
+);
+
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -79,6 +111,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error("Error signing out", error);
     }
   };
+
+  if (isClient && !isFirebaseConfigured) {
+    return <ConfigurationRequiredScreen />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, loading, signInWithGoogle, signInWithEmailAndPassword, createUserWithEmailAndPassword, logout, isFirebaseConfigured }}>
