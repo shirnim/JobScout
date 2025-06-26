@@ -41,7 +41,6 @@ export default function JobSearchAndListings() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  const [searchCountry, setSearchCountry] = useState('worldwide');
   const [countryFilter, setCountryFilter] = useState('all');
 
   // Autocomplete state
@@ -75,8 +74,6 @@ export default function JobSearchAndListings() {
     const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery || isLoading) return;
 
-    const combinedQuery = (searchCountry && searchCountry !== 'worldwide') ? `${trimmedQuery} in ${searchCountry}` : trimmedQuery;
-
     setQuery(searchQuery);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -85,7 +82,7 @@ export default function JobSearchAndListings() {
     setCurrentPage(1);
 
     try {
-        const result = await searchJobs(combinedQuery, {
+        const result = await searchJobs(trimmedQuery, {
           employmentType,
           datePosted,
           remoteOnly,
@@ -105,7 +102,7 @@ export default function JobSearchAndListings() {
     } finally {
         setIsLoading(false);
     }
-  }, [searchCountry, employmentType, datePosted, remoteOnly, isLoading]);
+  }, [employmentType, datePosted, remoteOnly, isLoading]);
 
 
   const availableCountries = useMemo(() => {
@@ -216,7 +213,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Quality Assurance in London"
+              placeholder="e.g., Software Engineer in Canada"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -271,25 +268,6 @@ export default function JobSearchAndListings() {
                 </Card>
             )}
         </div>
-        
-        <Select value={searchCountry} onValueChange={setSearchCountry} disabled={isLoading}>
-            <SelectTrigger className="w-full sm:w-[200px] h-11">
-                <SelectValue placeholder="Select Country" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="worldwide">Worldwide</SelectItem>
-                <SelectItem value="United States">United States</SelectItem>
-                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                <SelectItem value="Canada">Canada</SelectItem>
-                <SelectItem value="Germany">Germany</SelectItem>
-                <SelectItem value="France">France</SelectItem>
-                <SelectItem value="Australia">Australia</SelectItem>
-                <SelectItem value="India">India</SelectItem>
-                <SelectItem value="Singapore">Singapore</SelectItem>
-                <SelectItem value="Netherlands">Netherlands</SelectItem>
-                <SelectItem value="Switzerland">Switzerland</SelectItem>
-            </SelectContent>
-        </Select>
         
         <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading} className="h-11 w-full sm:w-auto">
             <Search className="h-5 w-5" />
