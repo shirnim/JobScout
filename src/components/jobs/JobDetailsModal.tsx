@@ -151,36 +151,49 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
       <DialogContent className="sm:max-w-3xl p-0 grid grid-rows-[1fr_auto] max-h-[90vh]">
         <ScrollArea>
             <div className="p-6">
+                <DialogHeader>
+                    {isLoading ? (
+                        <>
+                            <DialogTitle><Skeleton className="h-8 w-3/4" /></DialogTitle>
+                            <div className="pt-2"><Skeleton className="h-5 w-1/2" /></div>
+                        </>
+                    ) : error ? (
+                        <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline text-destructive">Error</DialogTitle>
+                    ) : jobToDisplay ? (
+                        <>
+                            <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline">{jobToDisplay.title}</DialogTitle>
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground text-sm">
+                                <span className="flex items-center gap-2"><Building className="h-4 w-4" />{jobToDisplay.company}</span>
+                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{jobToDisplay.location}</span>
+                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />Posted {format(new Date(jobToDisplay.datePosted), 'MMMM d, yyyy')}</span>
+                            </div>
+                        </>
+                    ) : null}
+                </DialogHeader>
+
                 {isLoading && (
-                    <div className="space-y-4">
-                        <Skeleton className="h-8 w-3/4" />
-                        <Skeleton className="h-5 w-1/2" />
-                        <Separator className="my-4"/>
-                        <Skeleton className="h-6 w-1/4 mb-4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
+                    <div className="space-y-4 mt-6">
+                        <Separator />
+                        <div className="pt-4">
+                            <Skeleton className="h-6 w-1/4 mb-4" />
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-5/6" />
+                            </div>
+                        </div>
                     </div>
                 )}
                 
                 {error && !isLoading && (
                     <div className="text-center py-12">
                         <Briefcase className="mx-auto h-12 w-12 text-destructive" />
-                        <h2 className="mt-4 text-xl font-semibold">Error</h2>
                         <p className="text-muted-foreground mt-2">{error}</p>
                     </div>
                 )}
 
                 {jobToDisplay && !isLoading && !error && (
                     <>
-                        <DialogHeader>
-                            <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline">{jobToDisplay.title}</DialogTitle>
-                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground text-sm">
-                                <span className="flex items-center gap-2"><Building className="h-4 w-4" />{jobToDisplay.company}</span>
-                                <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{jobToDisplay.location}</span>
-                                <span className="flex items-center gap-2"><Calendar className="h-4 w-4" />Posted {format(new Date(jobToDisplay.datePosted), 'MMMM d, yyyy')}</span>
-                            </div>
-                        </DialogHeader>
                         <Separator className="my-6"/>
                         
                         <h2 className="text-xl font-semibold mb-4 font-headline">Job Description</h2>
