@@ -53,7 +53,7 @@ const transformApiJob = (apiJob: any): Job => ({
     highlights: apiJob.job_highlights,
 });
 
-export async function getJobs(query: string, numPages: string = '50', filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
+export async function getJobs(query: string, numPages: string = '20', filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
   if (!query) {
     return { jobs: [] };
   }

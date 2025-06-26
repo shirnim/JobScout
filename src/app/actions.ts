@@ -7,6 +7,6 @@ export async function searchJobs(query: string, filters: SearchFilters): Promise
     if (!query || query.trim() === '') {
         return { jobs: [] };
     }
-    // Fetch up to 50 pages for a user-initiated search to provide more comprehensive results.
-    return await fetchJobs(query, '50', filters);
+    // Fetch up to 20 pages (the API's maximum) for a user-initiated search.
+    return await fetchJobs(query, '20', filters);
 }
