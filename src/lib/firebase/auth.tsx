@@ -44,8 +44,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
           const mockUserEmail = localStorage.getItem('mock-user-session');
           if (mockUserEmail) {
-            const mockUsers = JSON.parse(localStorage.getItem('mock-users') || '[]');
-            const mockUser = mockUsers.find((u: any) => u && u.email === mockUserEmail);
+            const usersData = localStorage.getItem('mock-users');
+            const mockUsers = usersData ? JSON.parse(usersData) : [];
+
+            if (!Array.isArray(mockUsers)) {
+                console.error("Corrupted mock user data in localStorage. Clearing.");
+                localStorage.removeItem('mock-users');
+                localStorage.removeItem('mock-user-session');
+                setLoading(false);
+                return;
+            }
+
+            const mockUser = mockUsers.find((u: any) => u && typeof u === 'object' && u.email === mockUserEmail);
+
             if (mockUser) {
               const displayName = mockUser.email.split('@')[0];
               const color = mockUser.color || 'cccccc';
@@ -55,10 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 email: mockUser.email,
                 photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${color}&color=fff&size=100`,
               } as User);
+            } else {
+                // Session exists for a user not in the list, clear the session.
+                localStorage.removeItem('mock-user-session');
             }
           }
         } catch (error) {
-            console.error("Failed to parse mock user data from localStorage", error);
+            console.error("Failed to read mock user data from localStorage. Clearing for safety.", error);
+            localStorage.removeItem('mock-users');
+            localStorage.removeItem('mock-user-session');
         }
       }
       setLoading(false);
