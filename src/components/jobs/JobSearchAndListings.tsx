@@ -31,17 +31,21 @@ const JOBS_PER_PAGE = 9;
 export default function JobSearchAndListings() {
   const [query, setQuery] = useState('');
   const [masterJobList, setMasterJobList] = useState<Job[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAppending, setIsAppending] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [apiPage, setApiPage] = useState(1);
+  const [hasMorePages, setHasMorePages] = useState(true);
+
+  // Filter state
   const [employmentType, setEmploymentType] = useState('all');
   const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
+  const [country, setCountry] = useState('all');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  const [countryFilter, setCountryFilter] = useState('all');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -70,9 +74,14 @@ export default function JobSearchAndListings() {
     fetchSuggestions();
   }, [debouncedQuery]);
 
-  const handleSearch = useCallback(async (searchQuery: string) => {
+  const handleSearch = async (searchQuery: string) => {
     const trimmedQuery = searchQuery.trim();
-    if (!trimmedQuery || isLoading) return;
+    if (!trimmedQuery) return;
+
+    let finalQuery = trimmedQuery;
+    if (country !== 'all') {
+        finalQuery = `${trimmedQuery} in ${country}`;
+    }
 
     setQuery(searchQuery);
     setSuggestions([]);
@@ -80,17 +89,19 @@ export default function JobSearchAndListings() {
     setIsLoading(true);
     setHasSearched(true);
     setCurrentPage(1);
+    setApiPage(1);
 
     try {
-        const result = await searchJobs(trimmedQuery, {
+        const result = await searchJobs(finalQuery, {
           employmentType,
           datePosted,
           remoteOnly,
+          page: 1,
         });
         
         const uniqueJobs = Array.from(new Map(result.jobs.map(job => [job.id, job])).values());
         setMasterJobList(uniqueJobs);
-        setJobs(uniqueJobs);
+        setHasMorePages(uniqueJobs.length > 0);
         
         if (typeof window !== 'undefined') {
             localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
@@ -98,70 +109,66 @@ export default function JobSearchAndListings() {
     } catch(error) {
         console.error("Search failed:", error);
         setMasterJobList([]);
-        setJobs([]);
+        setHasMorePages(false);
     } finally {
         setIsLoading(false);
     }
-  }, [employmentType, datePosted, remoteOnly, isLoading]);
+  };
 
+  const handleLoadMore = async () => {
+    if (isAppending || !hasMorePages || !query) return;
 
-  const availableCountries = useMemo(() => {
-      const countries = new Set(masterJobList.map(job => job.country).filter(Boolean) as string[]);
-      return Array.from(countries).sort();
-  }, [masterJobList]);
+    let finalQuery = query;
+    if (country !== 'all') {
+        finalQuery = `${query} in ${country}`;
+    }
+
+    setIsAppending(true);
+    const nextPage = apiPage + 1;
+
+    try {
+        const result = await searchJobs(finalQuery, {
+            employmentType,
+            datePosted,
+            remoteOnly,
+            page: nextPage,
+        });
+
+        if (result.jobs.length > 0) {
+            const newJobs = result.jobs.filter(newJob => !masterJobList.some(existingJob => existingJob.id === newJob.id));
+            const updatedMasterList = [...masterJobList, ...newJobs];
+            setMasterJobList(updatedMasterList);
+            setApiPage(nextPage);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem('lastSearchResults', JSON.stringify(updatedMasterList));
+            }
+        } else {
+            setHasMorePages(false);
+        }
+    } catch (error) {
+        console.error("Failed to load more jobs:", error);
+    } finally {
+        setIsAppending(false);
+    }
+  };
+
 
   const handleApplyFilters = () => {
-    let filtered = [...masterJobList];
-
-    // Country
-    if (countryFilter && countryFilter !== 'all') {
-        filtered = filtered.filter(job => job.country === countryFilter);
-    }
-
-    // Remote only
-    if (remoteOnly) {
-      filtered = filtered.filter(job => 
-        job.location?.toLowerCase().includes('remote')
-      );
-    }
-
-    // Employment type
-    if (employmentType && employmentType !== 'all') {
-      filtered = filtered.filter(job => job.employmentType === employmentType);
-    }
-
-    // Date posted
-    if (datePosted && datePosted !== 'all') {
-      const now = new Date();
-      filtered = filtered.filter(job => {
-        if (!job.datePosted) return false;
-        const jobDate = new Date(job.datePosted);
-        const diffDays = (now.getTime() - jobDate.getTime()) / (1000 * 3600 * 24);
-        
-        switch (datePosted) {
-          case 'today': return diffDays <= 1;
-          case '3days': return diffDays <= 3;
-          case 'week': return diffDays <= 7;
-          case 'month': return diffDays <= 30;
-          default: return true;
-        }
-      });
-    }
-
-    setJobs(filtered);
-    setCurrentPage(1);
     setIsFilterOpen(false);
+    if(query) {
+        handleSearch(query);
+    }
   };
 
   const paginatedJobs = useMemo(() => {
     const startIndex = (currentPage - 1) * JOBS_PER_PAGE;
-    return jobs.slice(startIndex, startIndex + JOBS_PER_PAGE);
-  }, [currentPage, jobs]);
+    return masterJobList.slice(startIndex, startIndex + JOBS_PER_PAGE);
+  }, [currentPage, masterJobList]);
 
-  const totalPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
+  const totalPages = Math.ceil(masterJobList.length / JOBS_PER_PAGE);
 
   const handleExport = () => {
-    if (jobs.length === 0) return;
+    if (masterJobList.length === 0) return;
 
     const headers = ["ID", "Title", "Company", "Location", "Date Posted", "Description", "Apply URL"];
     const escapeCsvCell = (cell: string | undefined | null): string => {
@@ -177,7 +184,7 @@ export default function JobSearchAndListings() {
 
     const csvRows = [
       headers.join(','),
-      ...jobs.map(job => [
+      ...masterJobList.map(job => [
         escapeCsvCell(job.id),
         escapeCsvCell(job.title),
         escapeCsvCell(job.company),
@@ -213,7 +220,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Software Engineer in Canada"
+              placeholder="e.g., Software Engineer"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -221,7 +228,7 @@ export default function JobSearchAndListings() {
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
               autoComplete="off"
-              disabled={isLoading}
+              disabled={isLoading || isAppending}
             />
              {query && !isLoading && (
                 <Button
@@ -269,7 +276,7 @@ export default function JobSearchAndListings() {
             )}
         </div>
         
-        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading} className="h-11 w-full sm:w-auto">
+        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading || isAppending} className="h-11 w-full sm:w-auto">
             <Search className="h-5 w-5" />
             <span className="ml-2">Search</span>
         </Button>
@@ -290,7 +297,7 @@ export default function JobSearchAndListings() {
       
         {!isLoading && hasSearched && (
             <>
-            {jobs.length > 0 && (
+            {masterJobList.length > 0 && (
                 <div className="flex justify-end items-center gap-2 mb-6">
                     <Button 
                         onClick={handleExport} 
@@ -318,16 +325,19 @@ export default function JobSearchAndListings() {
                                 </div>
                                 <div className="grid gap-4">
                                      <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label>Location</Label>
-                                        <Select value={countryFilter} onValueChange={setCountryFilter} disabled={availableCountries.length === 0}>
+                                        <Label>Country</Label>
+                                        <Select value={country} onValueChange={setCountry}>
                                             <SelectTrigger className="col-span-2 h-10">
                                                 <SelectValue placeholder="Country" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="all">All Countries</SelectItem>
-                                                {availableCountries.map(country => (
-                                                    <SelectItem key={country} value={country}>{country}</SelectItem>
-                                                ))}
+                                                <SelectItem value="all">Worldwide</SelectItem>
+                                                <SelectItem value="USA">USA</SelectItem>
+                                                <SelectItem value="Canada">Canada</SelectItem>
+                                                <SelectItem value="UK">United Kingdom</SelectItem>
+                                                <SelectItem value="Australia">Australia</SelectItem>
+                                                <SelectItem value="Germany">Germany</SelectItem>
+                                                <SelectItem value="India">India</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -371,7 +381,7 @@ export default function JobSearchAndListings() {
                                         </label>
                                     </div>
                                 </div>
-                                 <Button onClick={handleApplyFilters} disabled={isLoading || masterJobList.length === 0} className="w-full">
+                                 <Button onClick={handleApplyFilters} disabled={isLoading || isAppending} className="w-full">
                                     Apply Filters
                                  </Button>
                             </div>
@@ -381,6 +391,15 @@ export default function JobSearchAndListings() {
             )}
             
             <JobList jobs={paginatedJobs} onViewDetails={setSelectedJob} />
+
+            {hasMorePages && masterJobList.length > 0 && (
+              <div className="text-center mt-8">
+                <Button onClick={handleLoadMore} disabled={isAppending || isLoading}>
+                  {isAppending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Load More Results
+                </Button>
+              </div>
+            )}
             
             {totalPages > 1 && (
                 <Pagination 

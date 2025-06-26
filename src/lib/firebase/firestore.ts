@@ -53,12 +53,18 @@ const transformApiJob = (apiJob: any): Job => ({
     highlights: apiJob.job_highlights,
 });
 
-export async function getJobs(query: string, numPages: string = '20', filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
+export async function getJobs(query: string, filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
   if (!query) {
     return { jobs: [] };
   }
   
-  const apiParams: Record<string, string> = { query: query, num_pages: numPages };
+  const apiParams: Record<string, string> = { 
+    query: query,
+    num_pages: '1' // Fetch one page of results from the API at a time
+  };
+    if (filters.page) {
+        apiParams.page = filters.page.toString();
+    }
     if (filters.employmentType && filters.employmentType !== 'all') {
         apiParams.employment_types = filters.employmentType;
     }
