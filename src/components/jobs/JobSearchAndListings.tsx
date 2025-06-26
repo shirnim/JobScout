@@ -42,7 +42,7 @@ export default function JobSearchAndListings() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  const [searchCountry, setSearchCountry] = useState('');
+  const [searchCountry, setSearchCountry] = useState('worldwide');
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -75,7 +75,7 @@ export default function JobSearchAndListings() {
     const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery || isLoading) return;
 
-    const combinedQuery = searchCountry ? `${trimmedQuery} in ${searchCountry}` : trimmedQuery;
+    const combinedQuery = (searchCountry && searchCountry !== 'worldwide') ? `${trimmedQuery} in ${searchCountry}` : trimmedQuery;
 
     setQuery(searchQuery);
     setSuggestions([]);
@@ -212,7 +212,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Quality Assurance"
+              placeholder="e.g., Quality Assurance in London"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -273,7 +273,7 @@ export default function JobSearchAndListings() {
                 <SelectValue placeholder="Select Country" />
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value="">Worldwide</SelectItem>
+                <SelectItem value="worldwide">Worldwide</SelectItem>
                 <SelectItem value="United States">United States</SelectItem>
                 <SelectItem value="United Kingdom">United Kingdom</SelectItem>
                 <SelectItem value="Canada">Canada</SelectItem>
