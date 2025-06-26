@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, ChevronLeft, ChevronRight, Loader2, Terminal, Filter, X } from 'lucide-react';
+import { Search, FileDown, Loader2, Terminal, Filter, X } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -25,6 +25,7 @@ import { Card } from '@/components/ui/card';
 import JobDetailsModal from './JobDetailsModal';
 import JobListSkeleton from './JobListSkeleton';
 import AdBanner from '@/components/ads/AdBanner';
+import Pagination from './Pagination';
 
 const JOBS_PER_PAGE = 9;
 
@@ -146,18 +147,6 @@ export default function JobSearchAndListings() {
   }, [currentPage, jobs]);
 
   const totalPages = Math.ceil(jobs.length / JOBS_PER_PAGE);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
 
   const handleExport = () => {
     if (jobs.length === 0) return;
@@ -397,19 +386,11 @@ export default function JobSearchAndListings() {
             <JobList jobs={paginatedJobs} onViewDetails={setSelectedJob} />
             
             {totalPages > 1 && (
-                <div className="flex items-center justify-center space-x-4 mt-8">
-                <Button onClick={handlePrevPage} disabled={currentPage === 1} variant="outline">
-                    <ChevronLeft className="mr-2 h-4 w-4" />
-                    Previous
-                </Button>
-                <span className="text-sm font-medium text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                </span>
-                <Button onClick={handleNextPage} disabled={currentPage >= totalPages} variant="outline">
-                    Next
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                </Button>
-                </div>
+                <Pagination 
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
             )}
             </>
         )}
