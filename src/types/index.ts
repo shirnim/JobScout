@@ -4,6 +4,7 @@ export type Job = {
   company: string;
   companyLogo?: string;
   location: string;
+  country?: string;
   datePosted: string;
   description: string;
   applyUrl: string;

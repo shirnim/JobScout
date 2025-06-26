@@ -42,6 +42,10 @@ export default function JobSearchAndListings() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
+  // New states for location filter
+  const [locationFilter, setLocationFilter] = useState('all');
+  const [availableLocations, setAvailableLocations] = useState<string[]>([]);
+
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -90,6 +94,10 @@ export default function JobSearchAndListings() {
     setMasterJobList(uniqueJobs);
     setJobs(uniqueJobs);
     setSource(result.source);
+    
+    const uniqueCountries = [...new Set(uniqueJobs.map(job => job.country).filter((c): c is string => !!c))];
+    setAvailableLocations(uniqueCountries.sort());
+    
     if (typeof window !== 'undefined') {
         localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
     }
@@ -105,6 +113,11 @@ export default function JobSearchAndListings() {
       filtered = filtered.filter(job => 
         job.location?.toLowerCase().includes('remote')
       );
+    }
+
+    // Location filter
+    if (locationFilter && locationFilter !== 'all') {
+        filtered = filtered.filter(job => job.country === locationFilter);
     }
 
     // Employment type
@@ -313,6 +326,20 @@ export default function JobSearchAndListings() {
                                     </p>
                                 </div>
                                 <div className="grid gap-4">
+                                    <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label>Location</Label>
+                                        <Select value={locationFilter} onValueChange={setLocationFilter} disabled={availableLocations.length === 0}>
+                                            <SelectTrigger className="col-span-2 h-10">
+                                                <SelectValue placeholder="Country" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Countries</SelectItem>
+                                                {availableLocations.map(loc => (
+                                                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div className="grid grid-cols-3 items-center gap-4">
                                         <Label>Job Type</Label>
                                         <Select value={employmentType} onValueChange={setEmploymentType}>
