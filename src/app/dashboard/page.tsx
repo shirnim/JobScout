@@ -82,10 +82,10 @@ const NoDataState = () => (
         <Card className="max-w-md mx-auto text-center border-dashed">
             <CardHeader>
                 <Search className="mx-auto h-12 w-12 text-muted-foreground" />
-                <CardTitle className="mt-4 text-2xl">No Analytics Data</CardTitle>
+                <CardTitle className="mt-4 text-2xl">Start Searching to See Your Dashboard</CardTitle>
             </CardHeader>
             <CardContent>
-                <p className="text-muted-foreground">Search for jobs on the search page to see analytics here.</p>
+                <p className="text-muted-foreground">Your dashboard is currently empty. Perform a job search to generate personalized analytics and insights.</p>
                 <Button asChild className="mt-6">
                     <Link href="/search">Go to Search</Link>
                 </Button>
@@ -156,7 +156,7 @@ export default function DashboardPage() {
                 <div>
                     <h1 className="text-3xl md:text-4xl font-bold font-headline">Dashboard</h1>
                     <p className="mt-2 text-lg text-muted-foreground">
-                        Search for jobs to see your personalized analytics.
+                        Your personalized job analytics will appear here once you start searching.
                     </p>
                 </div>
                 <NoDataState />
@@ -216,4 +216,3 @@ export default function DashboardPage() {
         </div>
     );
 }
-
