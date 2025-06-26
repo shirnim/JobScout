@@ -42,10 +42,7 @@ export default function JobSearchAndListings() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  // New states for location filter
-  const [locationFilter, setLocationFilter] = useState('all');
-  const [availableLocations, setAvailableLocations] = useState<string[]>([]);
-
+  const [searchCountry, setSearchCountry] = useState('');
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -75,7 +72,10 @@ export default function JobSearchAndListings() {
   }, [debouncedQuery]);
 
   const handleSearch = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim() || isLoading) return;
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery || isLoading) return;
+
+    const combinedQuery = searchCountry ? `${trimmedQuery} in ${searchCountry}` : trimmedQuery;
 
     setQuery(searchQuery);
     setSuggestions([]);
@@ -84,7 +84,7 @@ export default function JobSearchAndListings() {
     setHasSearched(true);
     setCurrentPage(1);
 
-    const result = await searchJobs(searchQuery, {
+    const result = await searchJobs(combinedQuery, {
       employmentType,
       datePosted,
       remoteOnly,
@@ -95,14 +95,11 @@ export default function JobSearchAndListings() {
     setJobs(uniqueJobs);
     setSource(result.source);
     
-    const uniqueCountries = [...new Set(uniqueJobs.map(job => job.country).filter((c): c is string => !!c))];
-    setAvailableLocations(uniqueCountries.sort());
-    
     if (typeof window !== 'undefined') {
         localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
     }
     setIsLoading(false);
-  }, [employmentType, datePosted, remoteOnly, isLoading]);
+  }, [searchCountry, employmentType, datePosted, remoteOnly, isLoading]);
 
 
   const handleApplyFilters = () => {
@@ -113,11 +110,6 @@ export default function JobSearchAndListings() {
       filtered = filtered.filter(job => 
         job.location?.toLowerCase().includes('remote')
       );
-    }
-
-    // Location filter
-    if (locationFilter && locationFilter !== 'all') {
-        filtered = filtered.filter(job => job.country === locationFilter);
     }
 
     // Employment type
@@ -214,12 +206,13 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-        <div className="relative w-full mb-8">
+      <div className="flex flex-col sm:flex-row items-center gap-2 mb-8">
+        <div className="relative flex-grow w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Quality Assurance in London"
+              placeholder="e.g., Quality Assurance"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -274,6 +267,32 @@ export default function JobSearchAndListings() {
                 </Card>
             )}
         </div>
+        
+        <Select value={searchCountry} onValueChange={setSearchCountry} disabled={isLoading}>
+            <SelectTrigger className="w-full sm:w-[200px] h-11">
+                <SelectValue placeholder="Select Country" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="">Worldwide</SelectItem>
+                <SelectItem value="United States">United States</SelectItem>
+                <SelectItem value="United Kingdom">United Kingdom</SelectItem>
+                <SelectItem value="Canada">Canada</SelectItem>
+                <SelectItem value="Germany">Germany</SelectItem>
+                <SelectItem value="France">France</SelectItem>
+                <SelectItem value="Australia">Australia</SelectItem>
+                <SelectItem value="India">India</SelectItem>
+                <SelectItem value="Singapore">Singapore</SelectItem>
+                <SelectItem value="Netherlands">Netherlands</SelectItem>
+                <SelectItem value="Switzerland">Switzerland</SelectItem>
+            </SelectContent>
+        </Select>
+        
+        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading} className="h-11 w-full sm:w-auto">
+            <Search className="h-5 w-5" />
+            <span className="ml-2">Search</span>
+        </Button>
+      </div>
+
 
         <AdBanner />
 
@@ -288,7 +307,7 @@ export default function JobSearchAndListings() {
         )}
 
         {isLoading && (
-            <div className="space-y-6">
+             <div className="space-y-6">
                 <div className="flex justify-center items-center gap-3 text-muted-foreground pt-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
                     <p className="text-xl font-medium">Fetching the latest opportunities...</p>
@@ -326,20 +345,6 @@ export default function JobSearchAndListings() {
                                     </p>
                                 </div>
                                 <div className="grid gap-4">
-                                    <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label>Location</Label>
-                                        <Select value={locationFilter} onValueChange={setLocationFilter} disabled={availableLocations.length === 0}>
-                                            <SelectTrigger className="col-span-2 h-10">
-                                                <SelectValue placeholder="Country" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Countries</SelectItem>
-                                                {availableLocations.map(loc => (
-                                                    <SelectItem key={loc} value={loc}>{loc}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
                                     <div className="grid grid-cols-3 items-center gap-4">
                                         <Label>Job Type</Label>
                                         <Select value={employmentType} onValueChange={setEmploymentType}>
@@ -420,5 +425,3 @@ export default function JobSearchAndListings() {
     </div>
   );
 }
-
-    
