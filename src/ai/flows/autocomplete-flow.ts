@@ -29,11 +29,32 @@ const prompt = ai.definePrompt({
   name: 'autocompletePrompt',
   input: {schema: AutocompleteInputSchema},
   output: {schema: AutocompleteOutputSchema},
-  prompt: `You are an API that provides autocomplete suggestions for a job search engine.
+  prompt: `You are an autocomplete API for a job search engine. Your ONLY function is to return a JSON object with a "suggestions" array.
 Given the user's partial query, return up to 5 relevant and common job search strings.
+The suggestions should be realistic queries a user might type.
 
 User query: {{{query}}}
 `,
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_NONE',
+      },
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_NONE',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_NONE',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_NONE',
+      },
+    ],
+  },
 });
 
 const autocompleteFlow = ai.defineFlow(
