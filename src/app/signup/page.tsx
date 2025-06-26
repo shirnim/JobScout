@@ -56,6 +56,7 @@ export default function SignUpPage() {
     setIsLoading(true);
     try {
       await createUserWithEmailAndPassword(values.email, values.password);
+      router.replace('/search');
     } catch (error: any) {
       toast({
         title: 'Sign Up Failed',

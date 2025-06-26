@@ -56,6 +56,7 @@ export default function SignInPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(values.email, values.password);
+      router.replace('/search');
     } catch (error: any) {
       toast({
         title: 'Sign In Failed',
