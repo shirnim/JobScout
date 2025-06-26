@@ -15,36 +15,36 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let db: Firestore | null = null;
+let isFirebaseConfigured = false;
 
-// Only initialize Firebase if explicitly told to in the .env file.
-const useRealFirebase = process.env.USE_REAL_FIREBASE === 'true';
-
-if (useRealFirebase) {
-  try {
-    // Check that config values are not placeholders
-    if (firebaseConfig.apiKey?.includes('your-')) {
-        throw new Error("Firebase API Key is a placeholder.");
+// Check that config values are not placeholders and are present
+if (
+    firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('your-') &&
+    firebaseConfig.authDomain &&
+    firebaseConfig.projectId
+) {
+    try {
+        app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+        auth = getAuth(app);
+        db = getFirestore(app);
+        isFirebaseConfigured = true;
+        console.log("Firebase initialized successfully.");
+    } catch (error) {
+        console.error(
+            "Firebase initialization failed! Please check your credentials in .env.",
+            error
+        );
+        // Force back to null if anything goes wrong.
+        app = null;
+        auth = null;
+        db = null;
+        isFirebaseConfigured = false;
     }
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
-    db = getFirestore(app);
-    console.log("Firebase initialized successfully.");
-  } catch (error) {
-    console.error(
-        "Firebase initialization failed! Please check your credentials in .env and ensure USE_REAL_FIREBASE is set correctly.",
-        error
-    );
-    // Force back to null if anything goes wrong.
-    app = null;
-    auth = null;
-    db = null;
-  }
 } else {
     console.warn(
-        'Firebase is not configured to run. App is in mock mode. To enable, set USE_REAL_FIREBASE="true" in the .env file after adding your credentials.'
+        'Firebase is not configured. The app will not function correctly without credentials. Please add your Firebase project credentials to the .env file.'
     );
 }
 
-const isFirebaseConfigured = !!auth;
 
-export { app, auth, db, isFirebaseConfigured, useRealFirebase };
+export { app, auth, db, isFirebaseConfigured };

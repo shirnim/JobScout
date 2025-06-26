@@ -1,26 +1,13 @@
 
 import type { Job, SearchFilters } from "@/types";
 
-const RAPIDAPI_KEY = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
-const RAPIDAPI_HOST = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
-
-const MOCK_JOBS: Job[] = [
-  { id: '1', title: 'Senior Frontend Developer', company: 'TechCorp', location: 'New York, NY', country: 'US', datePosted: '2024-05-20T10:00:00Z', description: 'We are looking for a seasoned Senior Frontend Developer to join our dynamic team. The ideal candidate will have extensive experience with React, TypeScript, and modern frontend build pipelines. You will be responsible for architecting and building complex user interfaces, ensuring high performance and responsiveness. A strong understanding of web standards and accessibility is a must.', applyUrl: '#', employmentType: 'FULLTIME', highlights: { "Qualifications": ["React", "TypeScript"] } },
-  { id: '2', title: 'Backend Engineer (Node.js)', company: 'DataSolutions', location: 'San Francisco, CA', country: 'US', datePosted: '2024-05-19T14:30:00Z', description: 'DataSolutions is seeking a Backend Engineer with expertise in Node.js to develop and maintain our server-side logic. You will work on database integrations, API development, and ensuring the scalability and security of our applications. Experience with microservices architecture and cloud platforms like AWS or GCP is highly desirable.', applyUrl: '#', employmentType: 'CONTRACTOR', highlights: { "Qualifications": ["Node.js", "AWS"] } },
-  { id: '3', title: 'Product Manager', company: 'Innovate Inc.', location: 'Remote', datePosted: '2024-05-22T09:00:00Z', description: 'As a Product Manager at Innovate Inc., you will drive the product vision and roadmap. You will work closely with engineering, design, and marketing teams to define product requirements, prioritize features, and deliver products that delight our users. Strong communication and leadership skills are essential.', applyUrl: '#', employmentType: 'FULLTIME', highlights: { "Responsibilities": ["Roadmap planning", "User stories"] } },
-  { id: '4', title: 'UX/UI Designer', company: 'CreativeMinds', location: 'Austin, TX', country: 'US', datePosted: '2024-05-18T11:00:00Z', description: 'CreativeMinds is looking for a talented UX/UI Designer to create intuitive and visually appealing interfaces for our web and mobile applications. You will be involved in the entire design process, from user research and wireframing to creating high-fidelity mockups and prototypes. A strong portfolio is required.', applyUrl: '#', employmentType: 'PARTTIME', highlights: { "Skills": ["Figma", "User Research"] } },
-  { id: '5', title: 'DevOps Engineer', company: 'CloudNet', location: 'Seattle, WA', country: 'US', datePosted: '2024-05-21T16:00:00Z', description: 'Join our CloudNet team as a DevOps Engineer and help us build and maintain our CI/CD pipelines and cloud infrastructure. You will be responsible for automating deployments, monitoring system health, and ensuring the reliability and scalability of our services. Experience with Docker, Kubernetes, and Terraform is a plus.', applyUrl: '#', employmentType: 'FULLTIME', highlights: { "Tools": ["Docker", "Kubernetes", "Terraform"] } },
-  { id: '6', title: 'Data Scientist', company: 'AlphaAnalytics', location: 'Boston, MA', country: 'US', datePosted: '2024-05-15T12:00:00Z', description: 'AlphaAnalytics is hiring a Data Scientist to analyze large datasets and extract actionable insights. You will develop machine learning models, create data visualizations, and work with stakeholders to solve complex business problems. Proficiency in Python, R, and SQL is required.', applyUrl: '#', employmentType: 'FULLTIME', highlights: { "Qualifications": ["Python", "Machine Learning"] } },
-];
-
-
 async function fetchFromApi(endpoint: string, params: Record<string, string>) {
     const key = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
     const host = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
 
     if (!key || !host || key.includes('your-rapidapi-key')) {
-        console.warn("[RapidAPI] Missing or placeholder API key. Using mock data.");
-        return null;
+        console.error("[RapidAPI] Missing or placeholder API key. API calls will fail.");
+        throw new Error("RapidAPI key is not configured.");
     }
 
     const sanitizedHost = host.replace(/^https?:\/\//, '');
@@ -40,14 +27,14 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[ERROR] API call to '${endpoint}' failed (${response.status}): ${errorText}`);
-            return null;
+            throw new Error(`API request failed with status ${response.status}`);
         }
 
         const result = await response.json();
         return result.data; // JSearch returns `{ data: [...] }`
     } catch (err) {
         console.error(`[ERROR] Network/API error during call to '${endpoint}':`, err);
-        return null;
+        throw err; // re-throw the error to be handled by the caller
     }
 }
 
@@ -66,9 +53,9 @@ const transformApiJob = (apiJob: any): Job => ({
     highlights: apiJob.job_highlights,
 });
 
-export async function getJobs(query: string, numPages: string = '10', filters: SearchFilters = {}): Promise<{ jobs: Job[], source: 'api' | 'mock' }> {
+export async function getJobs(query: string, numPages: string = '50', filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
   if (!query) {
-    return { jobs: [], source: 'mock' };
+    return { jobs: [] };
   }
   
   const apiParams: Record<string, string> = { query: query, num_pages: numPages };
@@ -84,35 +71,23 @@ export async function getJobs(query: string, numPages: string = '10', filters: S
 
   const apiData = await fetchFromApi('search', apiParams);
   
-  if (apiData === null) {
-      return { jobs: MOCK_JOBS, source: 'mock' };
-  }
-  
   if (Array.isArray(apiData)) {
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
       const uniqueJobs = Array.from(new Map(jobs.map(job => [job.id, job])).values());
-      return { jobs: uniqueJobs, source: 'api' };
+      return { jobs: uniqueJobs };
   }
 
-  console.warn('API returned unexpected data format, returning mock data.');
-  return { jobs: MOCK_JOBS, source: 'mock' };
+  console.warn('API returned unexpected data format, returning empty list.');
+  return { jobs: [] };
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  // 1. Try fetching from job-details endpoint
   const apiData = await fetchFromApi('job-details', { job_id: id });
     
   if (apiData && Array.isArray(apiData) && apiData.length > 0) {
     return transformApiJob(apiData[0]);
   }
-
-  // 2. If API fails, fall back to checking mock data just in case.
-  const mockJob = MOCK_JOBS.find(job => job.id === id);
-  if (mockJob) {
-      console.warn(`[Mock Fallback] Could not find job ${id} via API. Serving mock data.`);
-      return mockJob;
-  }
   
-  console.error(`[Fatal] Could not fetch job details for ID: ${id} from any source.`);
+  console.error(`[Fatal] Could not fetch job details for ID: ${id} from API.`);
   return null;
 }

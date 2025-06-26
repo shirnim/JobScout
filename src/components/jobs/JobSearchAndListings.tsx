@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, Loader2, Terminal, Filter, X } from 'lucide-react';
+import { Search, FileDown, Loader2, Filter, X } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -26,6 +26,7 @@ import JobDetailsModal from './JobDetailsModal';
 import JobListSkeleton from './JobListSkeleton';
 import AdBanner from '@/components/ads/AdBanner';
 import Pagination from './Pagination';
+import { useAuth } from '@/lib/firebase/auth';
 
 const JOBS_PER_PAGE = 9;
 
@@ -33,7 +34,6 @@ export default function JobSearchAndListings() {
   const [query, setQuery] = useState('');
   const [masterJobList, setMasterJobList] = useState<Job[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [source, setSource] = useState<'api' | 'mock' | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,6 +44,10 @@ export default function JobSearchAndListings() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
   const [searchCountry, setSearchCountry] = useState('worldwide');
+  const [countryFilter, setCountryFilter] = useState('all');
+
+  const { isFirebaseConfigured } = useAuth();
+
 
   // Autocomplete state
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -85,26 +89,42 @@ export default function JobSearchAndListings() {
     setHasSearched(true);
     setCurrentPage(1);
 
-    const result = await searchJobs(combinedQuery, {
-      employmentType,
-      datePosted,
-      remoteOnly,
-    });
-    
-    const uniqueJobs = Array.from(new Map(result.jobs.map(job => [job.id, job])).values());
-    setMasterJobList(uniqueJobs);
-    setJobs(uniqueJobs);
-    setSource(result.source);
-    
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
+    try {
+        const result = await searchJobs(combinedQuery, {
+          employmentType,
+          datePosted,
+          remoteOnly,
+        });
+        
+        const uniqueJobs = Array.from(new Map(result.jobs.map(job => [job.id, job])).values());
+        setMasterJobList(uniqueJobs);
+        setJobs(uniqueJobs);
+        
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
+        }
+    } catch(error) {
+        console.error("Search failed:", error);
+        setMasterJobList([]);
+        setJobs([]);
+    } finally {
+        setIsLoading(false);
     }
-    setIsLoading(false);
   }, [searchCountry, employmentType, datePosted, remoteOnly, isLoading]);
 
 
+  const availableCountries = useMemo(() => {
+      const countries = new Set(masterJobList.map(job => job.country).filter(Boolean) as string[]);
+      return Array.from(countries).sort();
+  }, [masterJobList]);
+
   const handleApplyFilters = () => {
     let filtered = [...masterJobList];
+
+    // Country
+    if (countryFilter && countryFilter !== 'all') {
+        filtered = filtered.filter(job => job.country === countryFilter);
+    }
 
     // Remote only
     if (remoteOnly) {
@@ -192,6 +212,26 @@ export default function JobSearchAndListings() {
   const handleSuggestionClick = (suggestion: string) => {
     handleSearch(suggestion);
   };
+
+  if (!isFirebaseConfigured && process.env.NODE_ENV !== 'test') {
+    return (
+        <div className="flex items-center justify-center pt-16">
+            <Card className="max-w-lg mx-auto text-center">
+                <CardHeader>
+                    <CardTitle className="text-2xl">Configuration Required</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <Alert variant="destructive">
+                        <AlertTitle>Action Needed</AlertTitle>
+                        <AlertDescription>
+                            This application requires Firebase and RapidAPI credentials to function. Please add your keys to the <strong>.env</strong> file and restart the server.
+                        </AlertDescription>
+                    </Alert>
+                </CardContent>
+            </Card>
+        </div>
+    );
+  }
 
   return (
     <div>
@@ -285,16 +325,6 @@ export default function JobSearchAndListings() {
 
         <AdBanner />
 
-        {source === 'mock' && hasSearched && !isLoading && (
-            <Alert variant="destructive" className="mb-8">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Developer Notice: Using Mock Data</AlertTitle>
-            <AlertDescription>
-                Could not connect to the live jobs API. The application is currently displaying sample data. To connect to the live API, please ensure your `NEXT_PUBLIC_RAPIDAPI_KEY` is set correctly in the `.env` file and restart the server.
-            </AlertDescription>
-            </Alert>
-        )}
-
         {isLoading && (
              <div className="space-y-6">
                 <div className="flex justify-center items-center gap-3 text-muted-foreground pt-8">
@@ -334,6 +364,20 @@ export default function JobSearchAndListings() {
                                     </p>
                                 </div>
                                 <div className="grid gap-4">
+                                     <div className="grid grid-cols-3 items-center gap-4">
+                                        <Label>Location</Label>
+                                        <Select value={countryFilter} onValueChange={setCountryFilter} disabled={availableCountries.length === 0}>
+                                            <SelectTrigger className="col-span-2 h-10">
+                                                <SelectValue placeholder="Country" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="all">All Countries</SelectItem>
+                                                {availableCountries.map(country => (
+                                                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                     <div className="grid grid-cols-3 items-center gap-4">
                                         <Label>Job Type</Label>
                                         <Select value={employmentType} onValueChange={setEmploymentType}>
