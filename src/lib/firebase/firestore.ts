@@ -14,6 +14,8 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
     const url = new URL(`https://${sanitizedHost}/${endpoint}`);
     Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
 
+    console.log(`[API_CALL] Requesting URL: ${url.toString()}`);
+
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
@@ -21,19 +23,33 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
                 'X-RapidAPI-Key': key,
                 'X-RapidAPI-Host': sanitizedHost,
             },
-            next: { revalidate: 3600 }
+            // Disable caching for API calls to ensure fresh data and prevent caching errors
+            cache: 'no-store',
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[ERROR] API call to '${endpoint}' failed (${response.status}): ${errorText}`);
-            throw new Error(`API request failed with status ${response.status}`);
+            console.error(`[ERROR] API call to '${endpoint}' failed with status ${response.status}: ${errorText}`);
+            
+            let errorMessage = `API request failed with status ${response.status}.`;
+            try {
+                const errorJson = JSON.parse(errorText);
+                if (errorJson && errorJson.message) {
+                    errorMessage = `API Error: ${errorJson.message}`;
+                }
+            } catch (e) {
+                // Not a JSON error, use the raw text if it's short
+                if (errorText.length < 200) {
+                   errorMessage = errorText;
+                }
+            }
+            throw new Error(errorMessage);
         }
 
         const result = await response.json();
         return result.data; // JSearch returns `{ data: [...] }`
     } catch (err) {
-        console.error(`[ERROR] Network/API error during call to '${endpoint}':`, err);
+        console.error(`[FATAL_ERROR] Network/API error during call to '${endpoint}':`, err);
         throw err; // re-throw the error to be handled by the caller
     }
 }
