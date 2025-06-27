@@ -6,7 +6,9 @@ const ARBEITNOW_API_URL = 'https://api.arbeitnow.com/api/job-board-api';
 async function fetchFromApi(params: Record<string, string>) {
     const url = new URL(ARBEITNOW_API_URL);
     Object.entries(params).forEach(([k, v]) => {
-        url.searchParams.append(k, v)
+        if (v) { // Ensure value is not empty or null
+            url.searchParams.append(k, v)
+        }
     });
 
     console.log(`[API_CALL] Requesting URL: ${url.toString()}`);
@@ -17,7 +19,8 @@ async function fetchFromApi(params: Record<string, string>) {
             headers: {
                 'User-Agent': 'JobScoutApp/1.0'
             },
-            cache: 'no-store', // Disable caching for API calls to ensure fresh data
+            // Removing 'cache: no-store' as Server Actions are dynamic by default
+            // and this can sometimes cause issues in certain Node.js environments.
         });
 
         if (!response.ok) {
@@ -41,9 +44,12 @@ async function fetchFromApi(params: Record<string, string>) {
 
         const result = await response.json();
         return result.data; // Arbeitnow API returns data in the `data` property
-    } catch (err) {
+    } catch (err: any) {
         console.error(`[FATAL_ERROR] Network/API error during call:`, err);
-        throw err; // re-throw the error to be handled by the caller
+        if (err.cause) {
+          console.error('[ERROR_CAUSE]', err.cause);
+        }
+        throw new Error(err.message || 'An unknown network error occurred during fetch.');
     }
 }
 
@@ -63,16 +69,12 @@ const transformApiJob = (apiJob: any): Job => ({
 });
 
 export async function getJobs(query: string, filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
-  if (!query) {
-    return { jobs: [] };
-  }
-  
   const apiParams: Record<string, string> = { 
     search: query,
     page: filters.page?.toString() || '1',
   };
 
-  if (filters.location) {
+  if (filters.location && filters.location !== 'all') {
     apiParams.location = filters.location;
   }
   if (filters.remoteOnly) {
@@ -95,7 +97,7 @@ export async function getJob(id: string): Promise<Job | null> {
   if (!id) return null;
 
   // The Arbeitnow API doesn't have a direct "get by ID" endpoint.
-  // As a workaround, we can search for the slug, which should be unique.
+  // As a workaround, we can search for the slug, which should be a unique part of the title or content.
   const apiParams = { search: id, page: '1' };
   const apiData = await fetchFromApi(apiParams);
 

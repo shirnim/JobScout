@@ -72,11 +72,10 @@ export default function JobSearchAndListings() {
     fetchSuggestions();
   }, [debouncedQuery]);
 
-  const handleSearch = async (searchQuery: string) => {
-    const trimmedQuery = searchQuery.trim();
+  const handleSearch = async () => {
+    const trimmedQuery = query.trim();
     if (!trimmedQuery) return;
 
-    setQuery(searchQuery);
     setSuggestions([]);
     setShowSuggestions(false);
     setIsLoading(true);
@@ -87,7 +86,7 @@ export default function JobSearchAndListings() {
 
     try {
         const result = await searchJobs(trimmedQuery, {
-          location: country === 'all' ? undefined : country,
+          location: country,
           remoteOnly,
           page: 1,
         });
@@ -118,7 +117,7 @@ export default function JobSearchAndListings() {
 
     try {
         const result = await searchJobs(query, {
-            location: country === 'all' ? undefined : country,
+            location: country,
             remoteOnly,
             page: nextPage,
         });
@@ -191,7 +190,8 @@ export default function JobSearchAndListings() {
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    handleSearch(suggestion);
+    setQuery(suggestion);
+    handleSearch();
   };
 
   return (
@@ -202,14 +202,14 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Software Engineer"
+              placeholder="e.g., Software Engineer in Berlin"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
                 if (searchError) setSearchError(null);
               }}
-              onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
+              onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(); }}}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
               autoComplete="off"
@@ -261,7 +261,7 @@ export default function JobSearchAndListings() {
             )}
         </div>
         
-        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading || isAppending} className="h-11 w-full sm:w-auto shrink-0">
+        <Button size="lg" onClick={handleSearch} disabled={isLoading || isAppending} className="h-11 w-full sm:w-auto shrink-0">
             <Search className="h-5 w-5" />
             <span className="ml-2">Search</span>
         </Button>
