@@ -60,7 +60,7 @@ const transformApiJob = (apiJob: any): Job => ({
     datePosted: new Date(apiJob.created_at * 1000).toISOString(), // Convert Unix timestamp to ISO string
     description: apiJob.description, // Full description is available in the list view
     applyUrl: apiJob.url,
-    employmentType: apiJob.tags?.join(', '), // Tags can represent employment type
+    employmentType: apiJob.job_types?.join(', '), // Corrected from 'tags'
     highlights: undefined, // Highlights are not provided by Arbeitnow
 });
 
@@ -89,6 +89,22 @@ export async function getJobs(query: string, filters: SearchFilters = {}): Promi
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  console.warn(`[DEPRECATED] getJob was called for id: ${id}, but the Arbeitnow API does not support fetching individual jobs by ID. This function will be removed in a future update.`);
+  if (!id) return null;
+
+  // The Arbeitnow API doesn't have a direct "get by ID" endpoint.
+  // As a workaround, we can search for the slug, which should be unique.
+  const apiParams = { search: id, page: '1' };
+  const apiData = await fetchFromApi(apiParams);
+
+  if (Array.isArray(apiData) && apiData.length > 0) {
+    // Find the job with the exact matching slug (which is the job's ID in our app)
+    const matchedJob = apiData.find(job => job.slug === id);
+    if (matchedJob) {
+      return transformApiJob(matchedJob);
+    }
+  }
+
+  // If no exact match is found after checking the first page, return null.
+  console.warn(`Could not find a job with id: ${id}`);
   return null;
 }
