@@ -16,7 +16,9 @@ async function fetchFromApi(params: Record<string, string>) {
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
-            // The Arbeitnow API is public and doesn't require API keys or special headers
+            headers: {
+                'User-Agent': 'JobScoutApp/1.0'
+            },
             cache: 'no-store', // Disable caching for API calls to ensure fresh data
         });
 
