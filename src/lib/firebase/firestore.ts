@@ -6,9 +6,7 @@ const ARBEITNOW_API_URL = 'https://api.arbeitnow.com/api/job-board-api';
 async function fetchFromApi(params: Record<string, string>) {
     const url = new URL(ARBEITNOW_API_URL);
     Object.entries(params).forEach(([k, v]) => {
-        if (v) { // Only append parameters that have a value
-            url.searchParams.append(k, v)
-        }
+        url.searchParams.append(k, v)
     });
 
     console.log(`[API_CALL] Requesting URL: ${url.toString()}`);
@@ -72,9 +70,14 @@ export async function getJobs(query: string, filters: SearchFilters = {}): Promi
   const apiParams: Record<string, string> = { 
     search: query,
     page: filters.page?.toString() || '1',
-    location: filters.location || '',
-    remote: filters.remoteOnly ? 'true' : ''
   };
+
+  if (filters.location) {
+    apiParams.location = filters.location;
+  }
+  if (filters.remoteOnly) {
+    apiParams.remote = 'true';
+  }
 
   const apiData = await fetchFromApi(apiParams);
   
