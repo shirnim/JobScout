@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Job } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, FileDown, Loader2, Filter, X } from 'lucide-react';
+import { Search, FileDown, Loader2, X, AlertCircle } from 'lucide-react';
 import JobList from './JobList';
 import { searchJobs } from '@/app/actions';
 import {
@@ -16,7 +16,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { getAutocompleteSuggestions } from '@/ai/flows/autocomplete-flow';
 import { useDebounce } from '@/hooks/use-debounce';
@@ -25,6 +24,7 @@ import JobDetailsModal from './JobDetailsModal';
 import JobListSkeleton from './JobListSkeleton';
 import AdBanner from '@/components/ads/AdBanner';
 import Pagination from './Pagination';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const JOBS_PER_PAGE = 9;
 
@@ -37,13 +37,13 @@ export default function JobSearchAndListings() {
   const [currentPage, setCurrentPage] = useState(1);
   const [apiPage, setApiPage] = useState(1);
   const [hasMorePages, setHasMorePages] = useState(true);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // Filter state
   const [employmentType, setEmploymentType] = useState('all');
   const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [country, setCountry] = useState('all');
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
@@ -90,6 +90,7 @@ export default function JobSearchAndListings() {
     setHasSearched(true);
     setCurrentPage(1);
     setApiPage(1);
+    setSearchError(null);
 
     try {
         const result = await searchJobs(finalQuery, {
@@ -106,8 +107,9 @@ export default function JobSearchAndListings() {
         if (typeof window !== 'undefined') {
             localStorage.setItem('lastSearchResults', JSON.stringify(uniqueJobs));
         }
-    } catch(error) {
+    } catch(error: any) {
         console.error("Search failed:", error);
+        setSearchError(error.message || 'An unknown error occurred.');
         setMasterJobList([]);
         setHasMorePages(false);
     } finally {
@@ -122,7 +124,8 @@ export default function JobSearchAndListings() {
     if (country !== 'all') {
         finalQuery = `${query} in ${country}`;
     }
-
+    
+    setSearchError(null);
     setIsAppending(true);
     const nextPage = apiPage + 1;
 
@@ -145,18 +148,11 @@ export default function JobSearchAndListings() {
         } else {
             setHasMorePages(false);
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to load more jobs:", error);
+        setSearchError(error.message || 'An unknown error occurred while loading more jobs.');
     } finally {
         setIsAppending(false);
-    }
-  };
-
-
-  const handleApplyFilters = () => {
-    setIsFilterOpen(false);
-    if(query) {
-        handleSearch(query);
     }
   };
 
@@ -214,16 +210,19 @@ export default function JobSearchAndListings() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row items-center gap-2 mb-8">
+      <div className="flex flex-col sm:flex-row items-center gap-2 mb-4">
         <div className="relative flex-grow w-full">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Software Engineer"
+              placeholder="e.g., Software Engineer in Canada"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (searchError) setSearchError(null);
+              }}
               onKeyDown={(e) => { if (e.key === 'Enter') { handleSearch(query); }}}
               onFocus={() => setShowSuggestions(true)}
               onBlur={() => setTimeout(() => setShowSuggestions(false), 150)} // Delay to allow click
@@ -276,14 +275,81 @@ export default function JobSearchAndListings() {
             )}
         </div>
         
-        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading || isAppending} className="h-11 w-full sm:w-auto">
+        <Button size="lg" onClick={() => handleSearch(query)} disabled={isLoading || isAppending} className="h-11 w-full sm:w-auto shrink-0">
             <Search className="h-5 w-5" />
             <span className="ml-2">Search</span>
         </Button>
       </div>
 
+        <div className="flex flex-wrap gap-4 mb-8">
+            <div className="grid gap-2 flex-grow">
+                <Label htmlFor='country-select'>Country</Label>
+                <Select value={country} onValueChange={setCountry} name="country-select">
+                    <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Worldwide</SelectItem>
+                        <SelectItem value="USA">USA</SelectItem>
+                        <SelectItem value="Canada">Canada</SelectItem>
+                        <SelectItem value="UK">United Kingdom</SelectItem>
+                        <SelectItem value="Australia">Australia</SelectItem>
+                        <SelectItem value="Germany">Germany</SelectItem>
+                        <SelectItem value="India">India</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid gap-2 flex-grow">
+                <Label htmlFor='job-type-select'>Job Type</Label>
+                <Select value={employmentType} onValueChange={setEmploymentType} name="job-type-select">
+                    <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Job Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="FULLTIME">Full-time</SelectItem>
+                        <SelectItem value="PARTTIME">Part-time</SelectItem>
+                        <SelectItem value="CONTRACTOR">Contract</SelectItem>
+                        <SelectItem value="INTERN">Internship</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid gap-2 flex-grow">
+                <Label htmlFor='date-posted-select'>Date Posted</Label>
+                <Select value={datePosted} onValueChange={setDatePosted} name="date-posted-select">
+                    <SelectTrigger className="h-10">
+                        <SelectValue placeholder="Date Posted" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Any time</SelectItem>
+                        <SelectItem value="today">Today</SelectItem>
+                        <SelectItem value="3days">Last 3 days</SelectItem>
+                        <SelectItem value="week">Last week</SelectItem>
+                        <SelectItem value="month">Last month</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-end pb-1">
+                <div className="flex items-center space-x-2">
+                    <Checkbox id="remote-only-popover" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
+                    <Label htmlFor="remote-only-popover" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                        Remote only
+                    </Label>
+                </div>
+            </div>
+        </div>
 
         <AdBanner />
+
+        {searchError && (
+            <Alert variant="destructive" className="my-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Search Failed</AlertTitle>
+                <AlertDescription>
+                    {searchError}
+                </AlertDescription>
+            </Alert>
+        )}
 
         {isLoading && (
              <div className="space-y-6">
@@ -308,85 +374,6 @@ export default function JobSearchAndListings() {
                         <FileDown className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" size="sm" className="shrink-0">
-                                <Filter className="mr-2 h-4 w-4" />
-                                Filters
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80" align="end">
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <h4 className="font-medium leading-none">Filters</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        Refine your job search.
-                                    </p>
-                                </div>
-                                <div className="grid gap-4">
-                                     <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label>Country</Label>
-                                        <Select value={country} onValueChange={setCountry}>
-                                            <SelectTrigger className="col-span-2 h-10">
-                                                <SelectValue placeholder="Country" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Worldwide</SelectItem>
-                                                <SelectItem value="USA">USA</SelectItem>
-                                                <SelectItem value="Canada">Canada</SelectItem>
-                                                <SelectItem value="UK">United Kingdom</SelectItem>
-                                                <SelectItem value="Australia">Australia</SelectItem>
-                                                <SelectItem value="Germany">Germany</SelectItem>
-                                                <SelectItem value="India">India</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label>Job Type</Label>
-                                        <Select value={employmentType} onValueChange={setEmploymentType}>
-                                            <SelectTrigger className="col-span-2 h-10">
-                                                <SelectValue placeholder="Job Type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">All Types</SelectItem>
-                                                <SelectItem value="FULLTIME">Full-time</SelectItem>
-                                                <SelectItem value="PARTTIME">Part-time</SelectItem>
-                                                <SelectItem value="CONTRACTOR">Contract</SelectItem>
-                                                <SelectItem value="INTERN">Internship</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="grid grid-cols-3 items-center gap-4">
-                                        <Label>Date Posted</Label>
-                                        <Select value={datePosted} onValueChange={setDatePosted}>
-                                            <SelectTrigger className="col-span-2 h-10">
-                                                <SelectValue placeholder="Date Posted" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Any time</SelectItem>
-                                                <SelectItem value="today">Today</SelectItem>
-                                                <SelectItem value="3days">Last 3 days</SelectItem>
-                                                <SelectItem value="week">Last week</SelectItem>
-                                                <SelectItem value="month">Last month</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="flex items-center space-x-2 pt-2 pl-1">
-                                        <Checkbox id="remote-only-popover" checked={remoteOnly} onCheckedChange={(checked) => setRemoteOnly(!!checked)} />
-                                        <label
-                                            htmlFor="remote-only-popover"
-                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                                        >
-                                            Remote only
-                                        </label>
-                                    </div>
-                                </div>
-                                 <Button onClick={handleApplyFilters} disabled={isLoading || isAppending} className="w-full">
-                                    Apply Filters
-                                 </Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
                 </div>
             )}
             
