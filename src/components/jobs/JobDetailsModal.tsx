@@ -3,7 +3,6 @@
 
 import React, { useEffect, useState } from 'react';
 import type { Job } from '@/types';
-import { getJob } from '@/lib/firebase/firestore';
 import { enrichJobPost, EnrichJobPostInput } from '@/ai/flows/ai-job-post-enricher';
 import {
   Dialog,
@@ -15,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Building, Calendar, DollarSign, Star, Zap, Briefcase } from 'lucide-react';
+import { MapPin, Building, Calendar, DollarSign, Star, Zap } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { ScrollArea } from '../ui/scroll-area';
@@ -108,41 +107,9 @@ interface JobDetailsModalProps {
 }
 
 export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDetailsModalProps) {
-  const [detailedJob, setDetailedJob] = useState<Job | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (initialJob) {
-      setIsLoading(true);
-      setError(null);
-      setDetailedJob(null);
-      
-      getJob(initialJob.id)
-        .then(jobData => {
-          if (jobData) {
-            setDetailedJob(jobData);
-          } else {
-            setError('Job details could not be found.');
-          }
-        })
-        .catch(err => {
-          console.error("Error fetching job details:", err);
-          setError('An error occurred while fetching job details.');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [initialJob]);
-
-  const jobToDisplay = detailedJob || initialJob;
+  const jobToDisplay = initialJob;
 
   const handleOpenChange = (open: boolean) => {
-    if (!open) {
-      setDetailedJob(null);
-      setError(null);
-    }
     onOpenChange(open);
   };
   
@@ -152,14 +119,7 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
         <ScrollArea>
             <div className="p-6">
                 <DialogHeader>
-                    {isLoading ? (
-                        <>
-                            <DialogTitle><Skeleton className="h-8 w-3/4" /></DialogTitle>
-                            <div className="pt-2"><Skeleton className="h-5 w-1/2" /></div>
-                        </>
-                    ) : error ? (
-                        <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline text-destructive">Error</DialogTitle>
-                    ) : jobToDisplay ? (
+                    {jobToDisplay ? (
                         <>
                             <DialogTitle className="text-2xl md:text-3xl font-bold mb-2 font-headline">{jobToDisplay.title}</DialogTitle>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-muted-foreground text-sm">
@@ -171,35 +131,15 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
                     ) : null}
                 </DialogHeader>
 
-                {isLoading && (
-                    <div className="space-y-4 mt-6">
-                        <Separator />
-                        <div className="pt-4">
-                            <Skeleton className="h-6 w-1/4 mb-4" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-5/6" />
-                            </div>
-                        </div>
-                    </div>
-                )}
-                
-                {error && !isLoading && (
-                    <div className="text-center py-12">
-                        <Briefcase className="mx-auto h-12 w-12 text-destructive" />
-                        <p className="text-muted-foreground mt-2">{error}</p>
-                    </div>
-                )}
-
-                {jobToDisplay && !isLoading && !error && (
+                {jobToDisplay && (
                     <>
                         <Separator className="my-6"/>
                         
                         <h2 className="text-xl font-semibold mb-4 font-headline">Job Description</h2>
-                        <div className="text-muted-foreground whitespace-pre-line leading-relaxed prose prose-sm max-w-none">
-                            {jobToDisplay.description}
-                        </div>
+                        <div
+                          className="text-muted-foreground leading-relaxed max-w-none [&_a]:text-primary [&_a]:underline"
+                          dangerouslySetInnerHTML={{ __html: jobToDisplay.description || '' }}
+                        />
 
                         {jobToDisplay.highlights && Object.values(jobToDisplay.highlights).some(v => v && v.length > 0) && <Separator className="my-6" />}
             
@@ -220,13 +160,13 @@ export default function JobDetailsModal({ job: initialJob, onOpenChange }: JobDe
                             jobTitle: jobToDisplay.title,
                             companyName: jobToDisplay.company,
                             location: jobToDisplay.location,
-                            description: jobToDisplay.description
+                            description: "The job description is provided in HTML format." // Pass a placeholder since the full HTML can be large
                         }} />
                     </>
                 )}
             </div>
         </ScrollArea>
-        {jobToDisplay && !isLoading && !error && (
+        {jobToDisplay && (
             <DialogFooter className="p-6 bg-background border-t">
                 <Button variant="outline" onClick={() => handleOpenChange(false)}>Close</Button>
                 <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-accent-foreground">

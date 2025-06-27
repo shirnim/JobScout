@@ -1,35 +1,28 @@
 
 import type { Job, SearchFilters } from "@/types";
 
-async function fetchFromApi(endpoint: string, params: Record<string, string>) {
-    const key = process.env.NEXT_PUBLIC_RAPIDAPI_KEY;
-    const host = process.env.NEXT_PUBLIC_RAPIDAPI_HOST;
+const ARBEITNOW_API_URL = 'https://api.arbeitnow.com/api/job-board-api';
 
-    if (!key || !host || key.includes('your-rapidapi-key')) {
-        console.error("[RapidAPI] Missing or placeholder API key. API calls will fail.");
-        throw new Error("RapidAPI key is not configured.");
-    }
-
-    const sanitizedHost = host.replace(/^https?:\/\//, '');
-    const url = new URL(`https://${sanitizedHost}/${endpoint}`);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.append(k, v));
+async function fetchFromApi(params: Record<string, string>) {
+    const url = new URL(ARBEITNOW_API_URL);
+    Object.entries(params).forEach(([k, v]) => {
+        if (v) { // Only append parameters that have a value
+            url.searchParams.append(k, v)
+        }
+    });
 
     console.log(`[API_CALL] Requesting URL: ${url.toString()}`);
 
     try {
         const response = await fetch(url.toString(), {
             method: 'GET',
-            headers: {
-                'X-RapidAPI-Key': key,
-                'X-RapidAPI-Host': sanitizedHost,
-            },
-            // Disable caching for API calls to ensure fresh data and prevent caching errors
-            cache: 'no-store',
+            // The Arbeitnow API is public and doesn't require API keys or special headers
+            cache: 'no-store', // Disable caching for API calls to ensure fresh data
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[ERROR] API call to '${endpoint}' failed with status ${response.status}: ${errorText}`);
+            console.error(`[ERROR] API call failed with status ${response.status}: ${errorText}`);
             
             let errorMessage = `API request failed with status ${response.status}.`;
             try {
@@ -47,26 +40,26 @@ async function fetchFromApi(endpoint: string, params: Record<string, string>) {
         }
 
         const result = await response.json();
-        return result.data; // JSearch returns `{ data: [...] }`
+        return result.data; // Arbeitnow API returns data in the `data` property
     } catch (err) {
-        console.error(`[FATAL_ERROR] Network/API error during call to '${endpoint}':`, err);
+        console.error(`[FATAL_ERROR] Network/API error during call:`, err);
         throw err; // re-throw the error to be handled by the caller
     }
 }
 
 
 const transformApiJob = (apiJob: any): Job => ({
-    id: apiJob.job_id,
-    title: apiJob.job_title,
-    company: apiJob.employer_name || 'N/A',
-    companyLogo: apiJob.employer_logo,
-    location: apiJob.job_location || `${apiJob.job_city || ''}${apiJob.job_city && apiJob.job_state ? ', ' : ''}${apiJob.job_state || ''} ${apiJob.job_country || ''}`.trim() || 'Not specified',
-    country: apiJob.job_country,
-    datePosted: apiJob.job_posted_at_datetime_utc || new Date().toISOString(),
-    description: apiJob.job_description,
-    applyUrl: apiJob.job_apply_link,
-    employmentType: apiJob.job_employment_type,
-    highlights: apiJob.job_highlights,
+    id: apiJob.slug, // Use slug as the unique ID
+    title: apiJob.title,
+    company: apiJob.company_name || 'N/A',
+    companyLogo: undefined, // Arbeitnow doesn't provide a company logo
+    location: apiJob.location || 'Not specified',
+    country: undefined, // Country is not a separate field in the new API
+    datePosted: new Date(apiJob.created_at * 1000).toISOString(), // Convert Unix timestamp to ISO string
+    description: apiJob.description, // Full description is available in the list view
+    applyUrl: apiJob.url,
+    employmentType: apiJob.tags?.join(', '), // Tags can represent employment type
+    highlights: undefined, // Highlights are not provided by Arbeitnow
 });
 
 export async function getJobs(query: string, filters: SearchFilters = {}): Promise<{ jobs: Job[] }> {
@@ -75,23 +68,13 @@ export async function getJobs(query: string, filters: SearchFilters = {}): Promi
   }
   
   const apiParams: Record<string, string> = { 
-    query: query,
-    num_pages: '1' // Fetch one page of results from the API at a time
+    search: query,
+    page: filters.page?.toString() || '1',
+    location: filters.location || '',
+    remote: filters.remoteOnly ? 'true' : ''
   };
-    if (filters.page) {
-        apiParams.page = filters.page.toString();
-    }
-    if (filters.employmentType && filters.employmentType !== 'all') {
-        apiParams.employment_types = filters.employmentType;
-    }
-    if (filters.datePosted && filters.datePosted !== 'all') {
-        apiParams.date_posted = filters.datePosted;
-    }
-    if (filters.remoteOnly) {
-        apiParams.remote_jobs_only = 'true';
-    }
 
-  const apiData = await fetchFromApi('search', apiParams);
+  const apiData = await fetchFromApi(apiParams);
   
   if (Array.isArray(apiData)) {
       const jobs = apiData.map(transformApiJob).filter(job => job.id && job.title && job.description);
@@ -104,12 +87,6 @@ export async function getJobs(query: string, filters: SearchFilters = {}): Promi
 }
 
 export async function getJob(id: string): Promise<Job | null> {
-  const apiData = await fetchFromApi('job-details', { job_id: id });
-    
-  if (apiData && Array.isArray(apiData) && apiData.length > 0) {
-    return transformApiJob(apiData[0]);
-  }
-  
-  console.error(`[Fatal] Could not fetch job details for ID: ${id} from API.`);
+  console.warn(`[DEPRECATED] getJob was called for id: ${id}, but the Arbeitnow API does not support fetching individual jobs by ID. This function will be removed in a future update.`);
   return null;
 }

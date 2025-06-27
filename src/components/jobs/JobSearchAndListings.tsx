@@ -40,8 +40,6 @@ export default function JobSearchAndListings() {
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // Filter state
-  const [employmentType, setEmploymentType] = useState('all');
-  const [datePosted, setDatePosted] = useState('all');
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [country, setCountry] = useState('all');
 
@@ -78,11 +76,6 @@ export default function JobSearchAndListings() {
     const trimmedQuery = searchQuery.trim();
     if (!trimmedQuery) return;
 
-    let finalQuery = trimmedQuery;
-    if (country !== 'all') {
-        finalQuery = `${trimmedQuery} in ${country}`;
-    }
-
     setQuery(searchQuery);
     setSuggestions([]);
     setShowSuggestions(false);
@@ -93,9 +86,8 @@ export default function JobSearchAndListings() {
     setSearchError(null);
 
     try {
-        const result = await searchJobs(finalQuery, {
-          employmentType,
-          datePosted,
+        const result = await searchJobs(trimmedQuery, {
+          location: country === 'all' ? undefined : country,
           remoteOnly,
           page: 1,
         });
@@ -119,20 +111,14 @@ export default function JobSearchAndListings() {
 
   const handleLoadMore = async () => {
     if (isAppending || !hasMorePages || !query) return;
-
-    let finalQuery = query;
-    if (country !== 'all') {
-        finalQuery = `${query} in ${country}`;
-    }
     
     setSearchError(null);
     setIsAppending(true);
     const nextPage = apiPage + 1;
 
     try {
-        const result = await searchJobs(finalQuery, {
-            employmentType,
-            datePosted,
+        const result = await searchJobs(query, {
+            location: country === 'all' ? undefined : country,
             remoteOnly,
             page: nextPage,
         });
@@ -216,7 +202,7 @@ export default function JobSearchAndListings() {
             <Input
               type="text"
               aria-label="Search jobs"
-              placeholder="e.g., Software Engineer in Canada"
+              placeholder="e.g., Software Engineer"
               className="w-full pl-12 pr-10 py-3 rounded-lg shadow-sm focus-visible:ring-accent h-11 text-base"
               value={query}
               onChange={(e) => {
@@ -296,36 +282,6 @@ export default function JobSearchAndListings() {
                         <SelectItem value="Australia">Australia</SelectItem>
                         <SelectItem value="Germany">Germany</SelectItem>
                         <SelectItem value="India">India</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="grid gap-2 flex-grow">
-                <Label htmlFor='job-type-select'>Job Type</Label>
-                <Select value={employmentType} onValueChange={setEmploymentType} name="job-type-select">
-                    <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Job Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="FULLTIME">Full-time</SelectItem>
-                        <SelectItem value="PARTTIME">Part-time</SelectItem>
-                        <SelectItem value="CONTRACTOR">Contract</SelectItem>
-                        <SelectItem value="INTERN">Internship</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="grid gap-2 flex-grow">
-                <Label htmlFor='date-posted-select'>Date Posted</Label>
-                <Select value={datePosted} onValueChange={setDatePosted} name="date-posted-select">
-                    <SelectTrigger className="h-10">
-                        <SelectValue placeholder="Date Posted" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Any time</SelectItem>
-                        <SelectItem value="today">Today</SelectItem>
-                        <SelectItem value="3days">Last 3 days</SelectItem>
-                        <SelectItem value="week">Last week</SelectItem>
-                        <SelectItem value="month">Last month</SelectItem>
                     </SelectContent>
                 </Select>
             </div>

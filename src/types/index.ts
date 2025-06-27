@@ -26,4 +26,5 @@ export interface SearchFilters {
   datePosted?: string;
   remoteOnly?: boolean;
   page?: number;
+  location?: string;
 }
