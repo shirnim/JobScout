@@ -1,7 +1,7 @@
 
 import type { Job, SearchFilters } from "@/types";
 
-const ARBEITNOW_API_URL = 'https://api.arbeitnow.com/api/job-board-api';
+const ARBEITNOW_API_URL = 'https://www.arbeitnow.com/api/job-board-api';
 
 async function fetchFromApi(params: Record<string, string>) {
     const url = new URL(ARBEITNOW_API_URL);
